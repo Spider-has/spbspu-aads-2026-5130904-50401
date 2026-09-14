@@ -9,7 +9,7 @@
 
 #include "VectorRandomIter.hpp"
 
-namespace topit
+namespace khasnulin
 {
 
   template < class T > struct Vector

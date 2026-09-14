@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <stdexcept>
 
-namespace topit
+namespace khasnulin
 {
 
   template < class T > class Vector;
