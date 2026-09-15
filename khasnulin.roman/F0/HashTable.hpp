@@ -19,7 +19,7 @@ namespace khasnulin
     using mapped_type = Key;
 
     // Пара ключ-значение для хранения
-    using value_type = std::pair< const Key, Value >;
+    using value_type = std::pair< Key, Value >;
 
     // Тип размерности для массива
     using size_type = std::size_t;
@@ -128,12 +128,12 @@ namespace khasnulin
   // конструируем Hasher и Equal объекты
   template < class Key, class Value, class Hasher, class Equal >
   HashTable< Key, Value, Hasher, Equal >::HashTable(size_type initial_buckets):
-      buckets_(initial_buckets),
-      overflow_(),
+      elements_count_(0),
+      max_overflow_limit_(DEFAULT_OVERFLOW_LIMIT),
       hasher_(),
       equal_(),
-      elements_count_(0),
-      max_overflow_limit_(DEFAULT_OVERFLOW_LIMIT)
+      buckets_(initial_buckets),
+      overflow_()
   {
   }
 

@@ -10,6 +10,11 @@ struct Person
 {
   size_t age;
   std::string name;
+  Person():
+      age(0),
+      name("unknown")
+  {
+  }
   Person(size_t a):
       age(a),
       name("unknown")
