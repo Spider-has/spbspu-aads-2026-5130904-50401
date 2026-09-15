@@ -28,6 +28,9 @@ namespace khasnulin
     // Тип размерности для массива
     using size_type = std::size_t;
 
+    using iterator = HIter< Key, Value >;
+    using const_iterator = CHIter< Key, Value >;
+
     friend class HIter< Key, Value >;
     friend class CHIter< Key, Value >;
 
