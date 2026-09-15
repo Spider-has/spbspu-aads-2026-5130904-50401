@@ -104,6 +104,8 @@ namespace khasnulin
     const value_type *findInBucketOrOverflow(const Bucket &bucket, const Key &key) const;
     value_type *findInBucketOrOverflow(Bucket &bucket, const Key &key);
 
+    template < class V > value_type &insertIntoBucketOrOverflow(Bucket &bucket, const Key &key, V &&value);
+
     // текущее количество элементов в hashmap
     size_type elements_count_;
 
@@ -251,30 +253,7 @@ namespace khasnulin
     else
     {
       // элемент не найден, нужно понять, где мы должны его вставить
-      if (currBucket.count < BUCKET_CAPACITY)
-      {
-        // бакет не до конца заполнен, можем добавить в этот бакет наш value
-        currBucket.data[currBucket.count] = {key, std::forward< V >(value)};
-        // если вставка прошла успешно без исключений, можем инкрементировать счетчик
-        ++elements_count_;
-        ++currBucket.count;
-      }
-      else
-      {
-        // бакет заполнен, мы должны вставить в конец overflow, если он не заполнен до конца
-        if (overflow_.size() < max_overflow_limit_)
-        {
-          // место в overflow осталось, можем вставить с помощью empace и perfect forwarding
-          overflow_.emplace_back(key, std::forward< V >(value));
-          // вставка прошла успешно, инкрементируем общее число элементов
-          ++elements_count_;
-        }
-        else
-        {
-          // нельзя вставить, overflow переполнен, возвращаем исключение
-          throw std::overflow_error("Bucket is overflow and overflow buffer reached the limit");
-        }
-      }
+      insertIntoBucketOrOverflow(currBucket, key, std::forward< V >(value));
     }
   }
 
@@ -411,6 +390,54 @@ namespace khasnulin
     }
     // Если все скопировалось успешно и исключений не было, то смело делаем swap Hash Table
     swap(temp);
+  }
+
+  // Перегрузка оператора квадратные скобки
+  // Сначала находим существующий или вставляем с помощью add
+  template < class Key, class Value, class Hasher, class Equal >
+  Value &HashTable< Key, Value, Hasher, Equal >::operator[](const Key &key)
+  {
+    // вычисляем номер бакета с хэш функцией
+    size_t bucket_i = (hasher_(key) % buckets_.getSize());
+    Bucket &currBucket = buckets_[bucket_i];
+    // Ищем в нужном бакете наш элемент
+    value_type *existedValue = findInBucketOrOverflow(currBucket, key);
+    if (existedValue)
+    {
+      // элемент найден, нужно вернуть second
+      return existedValue->second;
+    }
+    // элемент не найден, нужно понять, где мы должны его вставить и вернуть его second
+    return insertIntoBucketOrOverflow(currBucket, key, {})->second;
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  template < class V >
+  typename HashTable< Key, Value, Hasher, Equal >::value_type &
+  HashTable< Key, Value, Hasher, Equal >::insertIntoBucketOrOverflow(Bucket &bucket, const Key &key,
+                                                                     V &&value)
+  {
+    if (bucket.count < BUCKET_CAPACITY)
+    {
+      // бакет не до конца заполнен, можем добавить в этот бакет наш value
+      bucket.data[bucket.count] = {key, std::forward< V >(value)};
+      // если вставка прошла успешно без исключений, можем инкрементировать счетчик
+      ++elements_count_;
+      ++bucket.count;
+      return bucket.data[bucket.count - 1];
+    }
+
+    // бакет заполнен, мы должны вставить в конец overflow, если он не заполнен до конца
+    if (overflow_.size() < max_overflow_limit_)
+    {
+      // место в overflow осталось, можем вставить с помощью empace и perfect forwarding
+      overflow_.emplace_back(key, std::forward< V >(value));
+      // вставка прошла успешно, инкрементируем общее число элементов
+      ++elements_count_;
+      return overflow_.back();
+    }
+    // нельзя вставить, overflow переполнен, возвращаем исключение
+    throw std::overflow_error("Bucket is overflow and overflow buffer reached the limit");
   }
 }
 
