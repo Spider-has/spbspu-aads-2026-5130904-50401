@@ -27,8 +27,8 @@ namespace khasnulin
     // Тип размерности для массива
     using size_type = std::size_t;
 
-    class iterator;
-    class const_iterator;
+    class HIter;
+    class CHIter;
 
     // Явный констркутор с необязательным параметром изначального количества слотов
     explicit HashTable(size_type initial_buckets = 16);
@@ -52,16 +52,16 @@ namespace khasnulin
     bool has(const Key &key) const;
 
     // Перехэшировать таблицу с новым числом слотов
-    void rehash(size_type slots);
+    void rehash(size_type buckets);
 
     // Перегрузка оператора квадратные скобки для обращения к значению по ключу
     Value &operator[](const Key &key);
 
     // итераторы (Forwarding iter, так как внутри у нас связный список)
-    iterator begin() noexcept;
-    iterator end() noexcept;
-    const_iterator cbegin() const noexcept;
-    const_iterator cend() const noexcept;
+    HIter begin() noexcept;
+    HIter end() noexcept;
+    CHIter cbegin() const noexcept;
+    CHIter cend() const noexcept;
 
     // Получить текущее количество слотов
     size_type size() const noexcept;
@@ -381,6 +381,36 @@ namespace khasnulin
       return cp;
     }
     throw std::out_of_range("can't drop element from hash map: such key not found");
+  }
+
+  // Метод rehash
+  // Задача -- перехешировать HashTable с новым количеством бакетов
+  // Нужно проверить, поместиться ли текущее количество элементов в новое количестов бакетов + лимит overflow
+  // Если поместиться, создаем пустую HastTable с buckets количеством бакетов и начинаем её заполнять с 0,
+  // проходясь по основной HashTable итераторами. Все value копируем, значение индекса
+  // вычисляем с помощью Hasher и % buckets. Как только все элементы скопировали, делаем swap временного
+  // объекта и нашего для гарантии exception safety
+  template < class Key, class Value, class Hasher, class Equal >
+  void HashTable< Key, Value, Hasher, Equal >::rehash(size_type buckets)
+  {
+    // Считаем, сколько максимум элементов поместиться при рехэшировании с такими кол-вом buckets;
+    size_type newMaxCount = (buckets * BUCKET_CAPACITY) + max_overflow_limit_;
+    // Если максимум меньше, чем текущее количество элементов, пробрасываем исключение
+    if (elements_count_ > newMaxCount)
+    {
+      throw std::overflow_error("can't rehash maps to this count of buckets, elements can't be placed there, "
+                                "overflow will happened");
+    }
+    // Создаем временную HashTable с buckets кол-вом bucket и max_overflow_limit равным текущему.
+    HashTable< Key, Value, Hasher, Equal > temp(buckets);
+    temp.max_overflow_limit_ = max_overflow_limit_;
+    // копируем все пары ключ-значение в нашу новую hashMap, учитывая рехэширование.
+    for (const value_type &item : (*this))
+    {
+      temp.add(item.first, item.second);
+    }
+    // Если все скопировалось успешно и исключений не было, то смело делаем swap Hash Table
+    swap(temp);
   }
 }
 
