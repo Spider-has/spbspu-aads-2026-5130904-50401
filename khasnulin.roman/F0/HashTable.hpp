@@ -22,7 +22,7 @@ namespace khasnulin
     using mapped_type = Key;
 
     // Пара ключ-значение для хранения
-    using value_type = std::pair< Key, Value >;
+    using public_value_type = std::pair< const Key, Value >;
 
     // Тип размерности для массива
     using size_type = std::size_t;
@@ -79,6 +79,8 @@ namespace khasnulin
     void set_overflow_limit(size_type limit) noexcept;
 
   private:
+    using value_type = std::pair< Key, Value >;
+
     // Константа для вместимости каждого бакета
     static constexpr size_type BUCKET_CAPACITY = 4;
 
@@ -330,9 +332,55 @@ namespace khasnulin
         static_cast< const HashTable * >(this)->findInBucketOrOverflow(bucket, key));
   }
 
+  // Метод drop
+  // Удаляет элемент с ключом key, если он есть, возвращает
+  // Если мы нашли элемент с ключем key, то нам важно понять, где именно он находится
+  // 1) если он в bucket, то необходимо его удалить с его позиции, сдвинуть все остальные элементы, уменьшить
+  // count 2) если он в overflow, то необходимо сделать erase по его позиции
+  // если элемента нет, бросаем исключение на попытку удалить несуществующий ключ
   template < class Key, class Value, class Hasher, class Equal >
   Value HashTable< Key, Value, Hasher, Equal >::drop(const Key &key)
   {
+    size_t bucket_i = (hasher_(key) % buckets_.getSize());
+    Bucket &currBucket = buckets_[bucket_i];
+    value_type *existedValue = findInBucketOrOverflow(currBucket, key);
+    // ищем key в бакете и в overflow
+    if (existedValue)
+    {
+      // нужно определить где именно хранится наш ключ, в bucket или в overflow
+      if ((existedValue >= currBucket.data) && existedValue < (currBucket.data + BUCKET_CAPACITY))
+      {
+        // если адрес нашего value находится между нижней границей массива bucket и верхней границей, то
+        // гарантированно в bucket. Вычисляем индекс по арифметике указателей
+        size_type val_i = existedValue - currBucket.data;
+
+        // копируем с move семантикой, чтобы сразу на этом этапе все потенциальные исключения пробросились, а
+        // дальше exception safety
+        Value cp = std::move(existedValue->second);
+
+        for (size_type i = val_i; i < currBucket.count - 1; ++i)
+        {
+          // Ставим на место нашего key все остальные элементы дальше нашего. Наш элемент уносим в конец.
+          std::swap(currBucket.data[i], currBucket.data[i + 1]);
+        }
+        // исключения не пробросились -> можем декрементировать счетчик и вернуть value
+        --currBucket.count;
+        --elements_count_;
+        return cp;
+      }
+      // ключ не в бакете, а в overflow, значит ищем там.
+      LIter< value_type > iter = overflow_.begin();
+      while (!equal_(key, iter->first))
+      {
+        ++iter;
+      }
+      // нашли iter на наш key, нужно убрать элемент из списка и вернуть копию значения
+      Value cp = std::move(iter->second);
+      overflow_.erase(iter);
+      --elements_count_;
+      return cp;
+    }
+    throw std::out_of_range("can't drop element from hash map: such key not found");
   }
 }
 
