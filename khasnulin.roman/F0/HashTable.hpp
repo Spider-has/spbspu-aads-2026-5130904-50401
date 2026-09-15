@@ -204,6 +204,27 @@ namespace khasnulin
   {
     lhs.swap(rhs);
   }
+
+  // Функция Add вставки в hashTable значения value
+  // 1) Если ключ key уже есть в hashTable, находим его в нужном bucket(или в overflow, если bucket
+  // переполнен) и обновляем значение на value с помощью perfect forwarding, количество элементов в бакете не
+  // меняется
+
+  // 2) Если ключа key не было в hastTable, вставляем в оставшееся место в его bucket, если там есть место и
+  // задаем значение Value по perfect forwading, инкрементируем кол-во элеметах в бакете и общее кол-во
+  // элементов
+
+  // 3) Если ключа key не было и bucket с ключами переполнен, то
+  // проверяем, переполнен ли буфер overfow
+  // Если список overfow достиг своего максимума, генерируем исколючение std::overflow_error,
+  // Если всё ок, добавляем элемент value с ключом key в конец списка overflow, инкрементируем  общее кол-во
+  // элементов.
+
+  template < class Key, class Value, class Hasher, class Equal >
+  template < class V >
+  void HashTable< Key, Value, Hasher, Equal >::add(const Key &key, V &&value)
+  {
+  }
 }
 
 #endif
