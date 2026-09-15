@@ -31,13 +31,13 @@ namespace khasnulin
     explicit HashTable(size_type initial_buckets = 16);
 
     // rule of 5
-    ~HashTable();
+    ~HashTable() = default;
 
-    HashTable(const HashTable &other);
-    HashTable &operator=(const HashTable &other);
+    HashTable(const HashTable &rhs);
+    HashTable &operator=(const HashTable &rhs);
 
-    HashTable(HashTable &&other) noexcept;
-    HashTable &operator=(HashTable &&other) noexcept;
+    HashTable(HashTable &&rhs) noexcept;
+    HashTable &operator=(HashTable &&rhs) noexcept;
 
     // Добавить по ключу K значение V.
     template < class V > void add(const Key &k, V &&v);
@@ -76,8 +76,13 @@ namespace khasnulin
     void set_overflow_limit(size_type limit) noexcept;
 
   private:
+    // swap метод для copy and swap идиомы.
+    void swap(HashTable &rhs) noexcept;
+
     // Константа для вместимости каждого бакета
     static constexpr size_type BUCKET_CAPACITY = 4;
+
+    static constexpr size_type DEFAULT_OVERFLOW_LIMIT = 10;
 
     // структура одного бакета
     struct Bucket
@@ -101,6 +106,97 @@ namespace khasnulin
     // список overflow значений
     BiList< value_type > overflow_;
   };
+
+  // Swap метод
+  // для реализации copy and swap идиомы
+  // для каждого поля объектов left и right вызываем swap
+  template < class Key, class Value, class Hasher, class Equal >
+  void HashTable< Key, Value, Hasher, Equal >::swap(HashTable &rhs) noexcept
+  {
+    std::swap(buckets_, rhs.buckets_);
+    std::swap(overflow_, rhs.overflow_);
+    std::swap(hasher_, rhs.hasher_);
+    std::swap(equal_, rhs.equal_);
+    std::swap(elements_count_, rhs.elements_count_);
+    std::swap(max_overflow_limit_, rhs.max_overflow_limit_);
+  }
+
+  // Конструктор класса HashTable
+  // Передаем в аргументах изначальное количество бакетов внутри HashTable (по дефолту -- 16)
+  // Инициализируем все внутренние поля: Массив bucket, пустой список, переменные количества и
+  // max_overflow_limit
+  // конструируем Hasher и Equal объекты
+  template < class Key, class Value, class Hasher, class Equal >
+  HashTable< Key, Value, Hasher, Equal >::HashTable(size_type initial_buckets):
+      buckets_(initial_buckets),
+      overflow_(),
+      hasher_(),
+      equal_(),
+      elements_count_(0),
+      max_overflow_limit_(DEFAULT_OVERFLOW_LIMIT)
+  {
+  }
+
+  // Конструктор перемещения
+  // Берем все поля из объекта rhs и перемещаем их с помощью move семантики
+  // объект rhs в итоге ничем не владеет.
+  template < class Key, class Value, class Hasher, class Equal >
+  HashTable< Key, Value, Hasher, Equal >::HashTable(HashTable< Key, Value, Hasher, Equal > &&rhs) noexcept:
+      buckets_(std::move(rhs.buckets_)),
+      overflow_(std::move(rhs.overflow_)),
+      hasher_(std::move(rhs.hasher_)),
+      equal_(std::move(rhs.equal_)),
+      elements_count_(rhs.elements_count_),
+      max_overflow_limit_(rhs.max_overflow_limit_)
+  {
+    rhs.elements_count_ = 0;
+  }
+
+  // Конструктор копирования по const &
+  // передаем в списки инициализации const ссылки на поля в rhs объекте
+  template < class Key, class Value, class Hasher, class Equal >
+  HashTable< Key, Value, Hasher, Equal >::HashTable(const HashTable< Key, Value, Hasher, Equal > &rhs):
+      buckets_(rhs.buckets_),
+      overflow_(rhs.overflow_),
+      hasher_(rhs.hasher_),
+      equal_(rhs.equal_),
+      elements_count_(rhs.elements_count_),
+      max_overflow_limit_(rhs.max_overflow_limit_)
+  {
+  }
+
+  // Перегрузка оператора копирующего присваивания
+  // реализуем через идиому copy and swap
+  // создаем копию объекта rhs, кладем её в cp с помощью копирующего конструктора
+  // меняем местами содержимое this и cp, таким образом в this все копии полей из rhs, а в cp все старые
+  // данные из this которые уничтожаются в конце действия этой функции в деструкторе
+  template < class Key, class Value, class Hasher, class Equal >
+  HashTable< Key, Value, Hasher, Equal > &
+  HashTable< Key, Value, Hasher, Equal >::operator=(const HashTable< Key, Value, Hasher, Equal > &rhs)
+  {
+    if (this == &rhs)
+    {
+      return *this;
+    }
+    HashTable< Key, Value, Hasher, Equal > cp = rhs;
+    swap(cp);
+    return *this;
+  }
+
+  // Перегрузка опреатора перемещающего присваивания
+  // Просто меняем местами содержимое rhs и *this, таким образом в rhs все старые поля из this, которые вскоре
+  // уничтожаться, в this все свежие поля из rhs. Копирования нигде не происходит
+  template < class Key, class Value, class Hasher, class Equal >
+  HashTable< Key, Value, Hasher, Equal > &
+  HashTable< Key, Value, Hasher, Equal >::operator=(HashTable< Key, Value, Hasher, Equal > &&rhs) noexcept
+  {
+    if (this != &rhs)
+    {
+      swap(rhs);
+    }
+    return *this;
+  }
+
 }
 
 #endif
