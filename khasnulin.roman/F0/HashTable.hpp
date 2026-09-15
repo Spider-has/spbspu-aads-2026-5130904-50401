@@ -1,6 +1,7 @@
 #ifndef HASH_TABLE_HPP
 #define HASH_TABLE_HPP
 
+#include "HashTableIters.hpp"
 #include "LIter.hpp"
 #include "List.hpp"
 #include "Vector.hpp"
@@ -27,8 +28,8 @@ namespace khasnulin
     // Тип размерности для массива
     using size_type = std::size_t;
 
-    class HIter;
-    class CHIter;
+    friend class HIter< Key, Value >;
+    friend class CHIter< Key, Value >;
 
     // Явный констркутор с необязательным параметром изначального количества слотов
     explicit HashTable(size_type initial_buckets = 16);
@@ -58,10 +59,10 @@ namespace khasnulin
     Value &operator[](const Key &key);
 
     // итераторы (Forwarding iter, так как внутри у нас связный список)
-    HIter begin() noexcept;
-    HIter end() noexcept;
-    CHIter cbegin() const noexcept;
-    CHIter cend() const noexcept;
+    HIter< Key, Value > begin() noexcept;
+    HIter< Key, Value > end() noexcept;
+    CHIter< Key, Value > cbegin() const noexcept;
+    CHIter< Key, Value > cend() const noexcept;
 
     // Получить текущее количество слотов
     size_type size() const noexcept;
