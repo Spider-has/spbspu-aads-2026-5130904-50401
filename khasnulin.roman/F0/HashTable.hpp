@@ -408,7 +408,7 @@ namespace khasnulin
       return existedValue->second;
     }
     // элемент не найден, нужно понять, где мы должны его вставить и вернуть его second
-    return insertIntoBucketOrOverflow(currBucket, key, {})->second;
+    return insertIntoBucketOrOverflow(currBucket, key, Value{}).second;
   }
 
   template < class Key, class Value, class Hasher, class Equal >
