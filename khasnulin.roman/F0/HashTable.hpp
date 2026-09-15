@@ -39,7 +39,7 @@ namespace khasnulin
     HashTable(HashTable &&other) noexcept;
     HashTable &operator=(HashTable &&other) noexcept;
 
-    // Добавить по ключу K значение V
+    // Добавить по ключу K значение V.
     template < class V > void add(const Key &k, V &&v);
 
     // Удалить значение K
