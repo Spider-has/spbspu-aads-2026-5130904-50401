@@ -1,9 +1,12 @@
 #ifndef HASH_TABLE_HPP
 #define HASH_TABLE_HPP
 
+#include "LIter.hpp"
 #include "List.hpp"
 #include "Vector.hpp"
 #include <functional>
+#include <stdexcept>
+#include <utility>
 
 namespace khasnulin
 {
@@ -40,19 +43,19 @@ namespace khasnulin
     HashTable &operator=(HashTable &&rhs) noexcept;
 
     // Добавить по ключу K значение V.
-    template < class V > void add(const Key &k, V &&v);
+    template < class V > void add(const Key &key, V &&value);
 
     // Удалить значение K
-    Value drop(const Key &k);
+    Value drop(const Key &key);
 
     // Проверить, если ли по ключу K значение
-    bool has(const Key &k);
+    bool has(const Key &key) const;
 
     // Перехэшировать таблицу с новым числом слотов
     void rehash(size_type slots);
 
     // Перегрузка оператора квадратные скобки для обращения к значению по ключу
-    Value &operator[](const Key &k);
+    Value &operator[](const Key &key);
 
     // итераторы (Forwarding iter, так как внутри у нас связный список)
     iterator begin() noexcept;
@@ -76,9 +79,6 @@ namespace khasnulin
     void set_overflow_limit(size_type limit) noexcept;
 
   private:
-    // swap метод для copy and swap идиомы.
-    void swap(HashTable &rhs) noexcept;
-
     // Константа для вместимости каждого бакета
     static constexpr size_type BUCKET_CAPACITY = 4;
 
@@ -89,7 +89,18 @@ namespace khasnulin
     {
       size_type count;
       value_type data[BUCKET_CAPACITY];
+      Bucket():
+          count(0)
+      {
+      }
     };
+
+    // swap метод для copy and swap идиомы.
+    void swap(HashTable &rhs) noexcept;
+
+    // вспомогательная функция для поиска значения с ключом внутри бакета и в overflow
+    const value_type *findInBucketOrOverflow(const Bucket &bucket, const Key &key) const;
+    value_type *findInBucketOrOverflow(Bucket &bucket, const Key &key);
 
     // текущее количество элементов в hashmap
     size_type elements_count_;
@@ -206,6 +217,7 @@ namespace khasnulin
   }
 
   // Функция Add вставки в hashTable значения value
+  // Вычисляем позицую ключа в массиве bucket с помощью хэш функции hasher.
   // 1) Если ключ key уже есть в hashTable, находим его в нужном bucket(или в overflow, если bucket
   // переполнен) и обновляем значение на value с помощью perfect forwarding, количество элементов в бакете не
   // меняется
@@ -223,6 +235,103 @@ namespace khasnulin
   template < class Key, class Value, class Hasher, class Equal >
   template < class V >
   void HashTable< Key, Value, Hasher, Equal >::add(const Key &key, V &&value)
+  {
+    // вычисляем номер бакета с хэш функцией
+    size_t bucket_i = (hasher_(key) % buckets_.getSize());
+    Bucket &currBucket = buckets_[bucket_i];
+    // Ищем в нужном бакете наш элемент, если бакет переполнен и мы не нашли, идем искать в overflow
+    value_type *existedValue = findInBucketOrOverflow(currBucket, key);
+    if (existedValue)
+    {
+      // элемент найден, нужно обновить его value
+      existedValue->second = std::forward< V >(value);
+    }
+    else
+    {
+      // элемент не найден, нужно понять, где мы должны его вставить
+      if (currBucket.count < BUCKET_CAPACITY)
+      {
+        // бакет не до конца заполнен, можем добавить в этот бакет наш value
+        currBucket.data[currBucket.count] = {key, std::forward< V >(value)};
+        // если вставка прошла успешно без исключений, можем инкрементировать счетчик
+        ++elements_count_;
+        ++currBucket.count;
+      }
+      else
+      {
+        // бакет заполнен, мы должны вставить в конец overflow, если он не заполнен до конца
+        if (overflow_.size() < max_overflow_limit_)
+        {
+          // место в overflow осталось, можем вставить с помощью empace и perfect forwarding
+          overflow_.emplace_back(key, std::forward< V >(value));
+          // вставка прошла успешно, инкрементируем общее число элементов
+          ++elements_count_;
+        }
+        else
+        {
+          // нельзя вставить, overflow переполнен, возвращаем исключение
+          throw std::overflow_error("Bucket is overflow and overflow buffer reached the limit");
+        }
+      }
+    }
+  }
+
+  // Метод has
+  // Проверяет, есть ли такой ключ в hashTable
+  // 1) Считаем хэш с помощью хэшера и определяем индекс бакета при текущем количестве бакетов
+  // 2) Проходимся в цикле до bucket.count элемента и проверяем, есть ли совпадения с ключом.
+  // 3) Если совпадение есть -> true
+  // 4) Совпадений нет и bucket.count == BUCKET CAPACITY -> идем искать совпадения с ключом в overflow
+  // 5) Нашли в overflow -> true
+  // 6) Во всех остальных случаях -> false
+  template < class Key, class Value, class Hasher, class Equal >
+  bool HashTable< Key, Value, Hasher, Equal >::has(const Key &key) const
+  {
+    size_t bucket_i = (hasher_(key) % buckets_.getSize());
+    const Bucket &currBucket = buckets_[bucket_i];
+    return findInBucketOrOverflow(currBucket, key) != nullptr;
+  }
+
+  // Впомогательный приватный метод findInBucketOrOverflow
+  // Ищет в уже переданном бакете элемент, если находит, то возвращает указатель на него
+  // Если не находит и бакет заполнен, идет искать в overflow, если находит, возвращает указатель
+  // Иначе возврат nullptr
+  template < class Key, class Value, class Hasher, class Equal >
+  const typename HashTable< Key, Value, Hasher, Equal >::value_type *
+  HashTable< Key, Value, Hasher, Equal >::findInBucketOrOverflow(const Bucket &bucket, const Key &key) const
+  {
+    size_type bucket_size = bucket.count;
+    for (size_type i = 0; i < bucket_size; ++i)
+    {
+      if (equal_(bucket.data[i].first, key))
+      {
+        return bucket.data + i;
+      }
+    }
+
+    // тут специально в любом случае будем искать в overflow, так как элемент с ключом в бакете может
+    // удалиться, размер бакета уменьшится, а элементы с таким же хэшом в overflow так и останутся в overflow,
+    // мы их должны там найти
+    for (const value_type &item : overflow_)
+    {
+      if (equal_(item.first, key))
+      {
+        return (&item);
+      }
+    }
+    return nullptr;
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::value_type *
+  HashTable< Key, Value, Hasher, Equal >::findInBucketOrOverflow(Bucket &bucket, const Key &key)
+  {
+    return const_cast< value_type * >(
+        static_cast< const HashTable * >(this)->findInBucketOrOverflow(bucket, key));
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  Value HashTable< Key, Value, Hasher, Equal >::drop(const Key &key)
   {
   }
 }
