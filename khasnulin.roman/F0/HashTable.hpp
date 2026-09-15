@@ -197,6 +197,13 @@ namespace khasnulin
     return *this;
   }
 
+  // Функция swap
+  // для корректной работый ADL
+  template < class Key, class Value, class Hasher, class Equal >
+  void swap(HashTable< Key, Value, Hasher, Equal > &lhs, HashTable< Key, Value, Hasher, Equal > &rhs) noexcept
+  {
+    lhs.swap(rhs);
+  }
 }
 
 #endif
