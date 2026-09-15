@@ -150,6 +150,10 @@ namespace khasnulin
       buckets_(initial_buckets),
       overflow_()
   {
+    if (initial_buckets == 0)
+    {
+      throw std::runtime_error("HashTable initialization error: buckets count can't be zero");
+    }
   }
 
   // Конструктор перемещения
@@ -438,6 +442,46 @@ namespace khasnulin
     }
     // нельзя вставить, overflow переполнен, возвращаем исключение
     throw std::overflow_error("Bucket is overflow and overflow buffer reached the limit");
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::size_type
+  HashTable< Key, Value, Hasher, Equal >::size() const noexcept
+  {
+    return elements_count_;
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  bool HashTable< Key, Value, Hasher, Equal >::empty() const noexcept
+  {
+    return elements_count_ == 0;
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::size_type
+  HashTable< Key, Value, Hasher, Equal >::overflow_size() const noexcept
+  {
+    return overflow_.size();
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  double HashTable< Key, Value, Hasher, Equal >::average_bucket_size() const noexcept
+  {
+    if (buckets_.getSize() == 0)
+    {
+      return 0.0;
+    }
+
+    size_type in_buckets_count = elements_count_ - overflow_.size();
+
+    return static_cast< double >(in_buckets_count) / buckets_.getSize();
+  }
+
+  // Поставить новый лимит для списка overflow значений
+  template < class Key, class Value, class Hasher, class Equal >
+  void HashTable< Key, Value, Hasher, Equal >::set_overflow_limit(size_type limit) noexcept
+  {
+    max_overflow_limit_ = limit;
   }
 }
 
