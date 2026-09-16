@@ -15,7 +15,7 @@ namespace khasnulin
 
     HIter();
 
-    HIter operator++();
+    HIter &operator++();
     HIter operator++(int);
 
     value_type &operator*() const;
@@ -35,8 +35,8 @@ namespace khasnulin
     size_t curr_elem_;
     RAIter< typename HashTable< Key, Value, Hasher, Equal >::Bucket > bucket_elem_;
     RAIter< typename HashTable< Key, Value, Hasher, Equal >::Bucket > bucket_end_;
-    LIter< value_type > overflow_elem_;
-    LIter< value_type > overflow_end_;
+    LIter< typename HashTable< Key, Value, Hasher, Equal >::value_type > overflow_elem_;
+    LIter< typename HashTable< Key, Value, Hasher, Equal >::value_type > overflow_end_;
   };
 
   template < class Key, class Value, class Hasher, class Equal > class CHIter
@@ -44,9 +44,11 @@ namespace khasnulin
   public:
     using value_type = typename HashTable< Key, Value, Hasher, Equal >::public_value_type;
 
-    CHIter();
+    CHIter() = default;
 
-    CHIter operator++();
+    CHIter(HIter< Key, Value, Hasher, Equal > iter);
+
+    CHIter &operator++();
     CHIter operator++(int);
 
     const value_type &operator*() const;
@@ -54,12 +56,13 @@ namespace khasnulin
 
     bool operator==(const CHIter &rhs) const;
 
-    friend class HashTable< Key, Value, Hasher, Equal >;
-
     bool operator!=(const CHIter &rhs) const;
 
+    friend class HashTable< Key, Value, Hasher, Equal >;
+
   private:
-    HIter< Key, Value, Hasher, Equal > iter;
+    CHIter(HashTable< Key, Value, Hasher, Equal > &hashTable, bool isEnd);
+    HIter< Key, Value, Hasher, Equal > iter_;
   };
 
   template < class Key, class Value, class Hasher, class Equal >
@@ -96,7 +99,7 @@ namespace khasnulin
   // Двигаемся вперед: если ещё не прошли все бакеты, то двигаемся по текущему бакету дальше, пока не выйдем
   // за count Если прошли все бакеты, то двигаемся итератором по списку overflow
   template < class Key, class Value, class Hasher, class Equal >
-  HIter< Key, Value, Hasher, Equal > HIter< Key, Value, Hasher, Equal >::operator++()
+  HIter< Key, Value, Hasher, Equal > &HIter< Key, Value, Hasher, Equal >::operator++()
   {
     // текущий бакет ещё не дошел до конца
     if (bucket_elem_ != bucket_end_)
@@ -127,10 +130,12 @@ namespace khasnulin
     // Бакеты не обошли ещё -> возвращаем из бакета ссылку
     if (bucket_elem_ != bucket_end_)
     {
-      return (*bucket_elem_).data[curr_elem_];
+      return reinterpret_cast< value_type & >((*bucket_elem_).data[curr_elem_]);
     }
     // Мы сейчас идем по overflow, возвращаем оттуда ссылку
-    return (*overflow_elem_);
+    return reinterpret_cast< value_type & >(
+        *const_cast< LIter< typename HashTable< Key, Value, Hasher, Equal >::value_type > & >(
+            overflow_elem_));
   }
 
   template < class Key, class Value, class Hasher, class Equal >
@@ -168,6 +173,58 @@ namespace khasnulin
   bool HIter< Key, Value, Hasher, Equal >::operator!=(const HIter &rhs) const
   {
     return !(*this == rhs);
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  CHIter< Key, Value, Hasher, Equal >::CHIter(HashTable< Key, Value, Hasher, Equal > &hashTable, bool isEnd):
+      iter_(hashTable, isEnd)
+  {
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  CHIter< Key, Value, Hasher, Equal >::CHIter(HIter< Key, Value, Hasher, Equal > iter):
+      iter_(iter)
+  {
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  CHIter< Key, Value, Hasher, Equal > &CHIter< Key, Value, Hasher, Equal >::operator++()
+  {
+    ++iter_;
+    return (*this);
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  CHIter< Key, Value, Hasher, Equal > CHIter< Key, Value, Hasher, Equal >::operator++(int)
+  {
+    CHIter< Key, Value, Hasher, Equal > cp(*this);
+    ++iter_;
+    return cp;
+  }
+  template < class Key, class Value, class Hasher, class Equal >
+  const typename CHIter< Key, Value, Hasher, Equal >::value_type &
+  CHIter< Key, Value, Hasher, Equal >::operator*() const
+  {
+    return static_cast< const value_type & >(*iter_);
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  const typename CHIter< Key, Value, Hasher, Equal >::value_type *
+  CHIter< Key, Value, Hasher, Equal >::operator->() const
+  {
+    return &(this->operator*());
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  bool CHIter< Key, Value, Hasher, Equal >::operator==(const CHIter &rhs) const
+  {
+    return iter_ == rhs.iter_;
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  bool CHIter< Key, Value, Hasher, Equal >::operator!=(const CHIter &rhs) const
+  {
+    return !(iter_ == rhs.iter_);
   }
 }
 
