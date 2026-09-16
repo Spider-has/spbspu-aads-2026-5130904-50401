@@ -11,6 +11,7 @@
 
 namespace khasnulin
 {
+
   // Шаблон с типами: КЛЮЧ, ЗНАЧЕНИЕ, ОБЪЕКТ-ХЭШЕР, ОБЪЕКТ КОМПАРАТОР
   template < class Key, class Value, class Hash = std::hash< Key >, class Equal = std::equal_to< Key > >
   class HashTable
@@ -28,11 +29,11 @@ namespace khasnulin
     // Тип размерности для массива
     using size_type = std::size_t;
 
-    using iterator = HIter< Key, Value >;
-    using const_iterator = CHIter< Key, Value >;
+    using iterator = HIter< Key, Value, Hash, Equal >;
+    using const_iterator = CHIter< Key, Value, Hash, Equal >;
 
-    friend class HIter< Key, Value >;
-    friend class CHIter< Key, Value >;
+    friend class HIter< Key, Value, Hash, Equal >;
+    friend class CHIter< Key, Value, Hash, Equal >;
 
     // Явный констркутор с необязательным параметром изначального количества слотов
     explicit HashTable(size_type initial_buckets = 16);
@@ -62,10 +63,10 @@ namespace khasnulin
     Value &operator[](const Key &key);
 
     // итераторы (Forwarding iter, так как внутри у нас связный список)
-    HIter< Key, Value > begin() noexcept;
-    HIter< Key, Value > end() noexcept;
-    CHIter< Key, Value > cbegin() const noexcept;
-    CHIter< Key, Value > cend() const noexcept;
+    iterator begin() noexcept;
+    iterator end() noexcept;
+    const_iterator cbegin() const noexcept;
+    const_iterator cend() const noexcept;
 
     // Получить текущее количество слотов
     size_type size() const noexcept;
