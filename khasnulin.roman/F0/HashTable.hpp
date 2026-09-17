@@ -68,8 +68,11 @@ namespace khasnulin
     const_iterator cbegin() const noexcept;
     const_iterator cend() const noexcept;
 
-    // Получить текущее количество слотов
+    // Получить текущее количество элементов
     size_type size() const noexcept;
+
+    // Получить текущее количество бакетов
+    size_type bucket_size() const noexcept;
 
     // Пустая ли hash-map
     bool empty() const noexcept;
@@ -393,7 +396,7 @@ namespace khasnulin
     HashTable< Key, Value, Hasher, Equal > temp(buckets);
     temp.max_overflow_limit_ = max_overflow_limit_;
     // копируем все пары ключ-значение в нашу новую hashMap, учитывая рехэширование.
-    for (const value_type &item : (*this))
+    for (const public_value_type &item : (*this))
     {
       temp.add(item.first, item.second);
     }
@@ -488,6 +491,39 @@ namespace khasnulin
   {
     max_overflow_limit_ = limit;
   }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::iterator
+  HashTable< Key, Value, Hasher, Equal >::begin() noexcept
+  {
+    return HIter< Key, Value, Hasher, Equal >(*this, false);
+  }
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::iterator
+  HashTable< Key, Value, Hasher, Equal >::end() noexcept
+  {
+    return HIter< Key, Value, Hasher, Equal >(*this, true);
+  }
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::const_iterator
+  HashTable< Key, Value, Hasher, Equal >::cbegin() const noexcept
+  {
+    return HIter< Key, Value, Hasher, Equal >(*this, false);
+  }
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::const_iterator
+  HashTable< Key, Value, Hasher, Equal >::cend() const noexcept
+  {
+    return HIter< Key, Value, Hasher, Equal >(*this, true);
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::size_type
+  HashTable< Key, Value, Hasher, Equal >::bucket_size() const noexcept
+  {
+    return buckets_.getSize();
+  }
+
 }
 
 #endif

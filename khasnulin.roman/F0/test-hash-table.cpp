@@ -1,8 +1,8 @@
-#define BOOST_TEST_MODULE HashTableTests
 #include "HashTable.hpp"
-#include <boost/test/included/unit_test.hpp>
+#include <boost/test/tools/old/interface.hpp>
+#include <boost/test/unit_test.hpp>
+#include <boost/test/unit_test_suite.hpp>
 #include <string>
-#include <vector>
 
 using namespace khasnulin;
 

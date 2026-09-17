@@ -61,7 +61,7 @@ namespace khasnulin
     friend class HashTable< Key, Value, Hasher, Equal >;
 
   private:
-    CHIter(HashTable< Key, Value, Hasher, Equal > &hashTable, bool isEnd);
+    CHIter(const HashTable< Key, Value, Hasher, Equal > &hashTable, bool isEnd);
     HIter< Key, Value, Hasher, Equal > iter_;
   };
 
@@ -176,7 +176,8 @@ namespace khasnulin
   }
 
   template < class Key, class Value, class Hasher, class Equal >
-  CHIter< Key, Value, Hasher, Equal >::CHIter(HashTable< Key, Value, Hasher, Equal > &hashTable, bool isEnd):
+  CHIter< Key, Value, Hasher, Equal >::CHIter(const HashTable< Key, Value, Hasher, Equal > &hashTable,
+                                              bool isEnd):
       iter_(hashTable, isEnd)
   {
   }
