@@ -65,6 +65,8 @@ namespace khasnulin
     // итераторы (Forwarding iter, так как внутри у нас связный список)
     iterator begin() noexcept;
     iterator end() noexcept;
+    const_iterator begin() const noexcept;
+    const_iterator end() const noexcept;
     const_iterator cbegin() const noexcept;
     const_iterator cend() const noexcept;
 
@@ -160,7 +162,7 @@ namespace khasnulin
   {
     if (initial_buckets == 0)
     {
-      throw std::runtime_error("HashTable initialization error: buckets count can't be zero");
+      throw std::invalid_argument("HashTable initialization error: buckets count can't be zero");
     }
   }
 
@@ -524,6 +526,18 @@ namespace khasnulin
     return buckets_.getSize();
   }
 
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::const_iterator
+  HashTable< Key, Value, Hasher, Equal >::begin() const noexcept
+  {
+    return CHIter< Key, Value, Hasher, Equal >(*this, false);
+  }
+  template < class Key, class Value, class Hasher, class Equal >
+  typename HashTable< Key, Value, Hasher, Equal >::const_iterator
+  HashTable< Key, Value, Hasher, Equal >::end() const noexcept
+  {
+    return CHIter< Key, Value, Hasher, Equal >(*this, true);
+  }
 }
 
 #endif

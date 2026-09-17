@@ -6,6 +6,8 @@
 namespace khasnulin
 {
 
+  template < class Key, class Value, class Hasher, class Equal > class CHIter;
+
   template < class Key, class Value, class Hash, class Equal > class HashTable;
 
   template < class Key, class Value, class Hasher, class Equal > class HIter
@@ -24,6 +26,8 @@ namespace khasnulin
     bool operator==(const HIter &rhs) const;
 
     friend class HashTable< Key, Value, Hasher, Equal >;
+
+    friend class CHIter< Key, Value, Hasher, Equal >;
 
     bool operator!=(const HIter &rhs) const;
 
@@ -178,7 +182,7 @@ namespace khasnulin
   template < class Key, class Value, class Hasher, class Equal >
   CHIter< Key, Value, Hasher, Equal >::CHIter(const HashTable< Key, Value, Hasher, Equal > &hashTable,
                                               bool isEnd):
-      iter_(hashTable, isEnd)
+      iter_(const_cast< HashTable< Key, Value, Hasher, Equal > & >(hashTable), isEnd)
   {
   }
 
