@@ -1,7 +1,7 @@
 #ifndef MAX_HEAP_HPP
 #define MAX_HEAP_HPP
 
-#include "VectorRandomIter.hpp"
+#include "Vector.hpp"
 #include <cstddef>
 
 namespace khasnulin
