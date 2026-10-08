@@ -1,8 +1,9 @@
 #include "MaxHeap.hpp"
-#include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/unit_test_suite.hpp>
+#include <random>
 #include <stdexcept>
+#include <string>
 
 using namespace khasnulin;
 
@@ -16,7 +17,7 @@ BOOST_AUTO_TEST_CASE(test_empty_creation_positive)
   BOOST_CHECK(heap.size() == 0);
 }
 
-BOOST_AUTO_TEST_CASE(test_empty_creation_get_top_negaitive)
+BOOST_AUTO_TEST_CASE(test_empty_creation_get_top_negative)
 {
   MaxHeap< int, std::less< int > > heap;
 
@@ -83,7 +84,7 @@ BOOST_AUTO_TEST_CASE(test_push_increasing_sequence_positive)
   BOOST_CHECK_EQUAL(heap.size(), 4);
 }
 
-BOOST_AUTO_TEST_CASE(test_push_dublicate_sequence_positive)
+BOOST_AUTO_TEST_CASE(test_push_duplicate_sequence_positive)
 {
   MaxHeap< int, std::less< int > > heap;
 
@@ -163,7 +164,7 @@ struct Person
 
 struct PersonComparator
 {
-  bool operator()(const Person &left, const Person &right)
+  bool operator()(const Person &left, const Person &right) const
   {
     return left.name < right.name;
   };
@@ -171,7 +172,7 @@ struct PersonComparator
 
 struct PersonInversedComparator
 {
-  bool operator()(const Person &left, const Person &right)
+  bool operator()(const Person &left, const Person &right) const
   {
     return left.name > right.name;
   };
@@ -241,6 +242,89 @@ BOOST_AUTO_TEST_CASE(test_swap_heaps_positive)
   BOOST_CHECK(!heap_B.empty());
   BOOST_CHECK_EQUAL(heap_B.size(), 3);
   BOOST_CHECK_EQUAL(heap_B.top(), 3);
+}
+
+class MovingObject
+{
+public:
+  MovingObject():
+      wasMoved_(false)
+  {
+  }
+
+  MovingObject(const MovingObject &val):
+      wasMoved_(val.wasMoved_)
+  {
+  }
+
+  MovingObject(MovingObject &&val) noexcept:
+      wasMoved_(val.wasMoved_)
+  {
+    val.wasMoved_ = true;
+  }
+
+  bool isMoved() const noexcept
+  {
+    return wasMoved_;
+  }
+
+private:
+  bool wasMoved_;
+};
+
+bool operator==(const MovingObject &lhs, const MovingObject &rhs)
+{
+  return lhs.isMoved() == rhs.isMoved();
+}
+
+BOOST_AUTO_TEST_CASE(test_perfect_forwarding_positive)
+{
+  MaxHeap< std::string, std::less< std::string > > heap_A;
+
+  std::string str = "move semantic str";
+  heap_A.push(std::move(str));
+
+  BOOST_CHECK(heap_A.size() == 1);
+  BOOST_CHECK(str.size() == 0);
+
+  BOOST_CHECK_EQUAL(heap_A.top(), "move semantic str");
+}
+
+BOOST_AUTO_TEST_CASE(test_perfect_forwarding_Moving_Object_positive)
+{
+  MaxHeap< MovingObject, std::less< MovingObject > > heap_A;
+
+  MovingObject obj;
+  heap_A.push(std::move(obj));
+
+  BOOST_CHECK(heap_A.size() == 1);
+  BOOST_CHECK(obj.isMoved());
+  MovingObject obj2;
+  BOOST_CHECK_EQUAL(heap_A.top(), obj2);
+}
+
+BOOST_AUTO_TEST_CASE(test_heap_sort_property_stress)
+{
+  MaxHeap< int, std::less< int > > heap;
+
+  std::mt19937 gen(42);
+  std::uniform_int_distribution< int > dist(-1000, 1000);
+
+  for (size_t i = 0; i < 500; ++i)
+  {
+    heap.push(dist(gen));
+  }
+
+  int prev_max = heap.top();
+  heap.pop();
+
+  while (!heap.empty())
+  {
+    int current_max = heap.top();
+    BOOST_CHECK(prev_max >= current_max);
+    prev_max = current_max;
+    heap.pop();
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
