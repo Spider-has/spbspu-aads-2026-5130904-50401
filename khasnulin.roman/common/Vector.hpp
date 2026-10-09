@@ -63,6 +63,7 @@ namespace khasnulin
     void changeVectorInSomeWay();
 
     void pushBack(const T &val);
+    void pushBack(T &&val);
 
     void pushBackCount(size_t k, const T &val);
     void unsafePushBack(size_t k, const T &val);

@@ -3,6 +3,7 @@
 
 #include "Vector.hpp"
 #include <cstddef>
+#include <stdexcept>
 
 namespace khasnulin
 {
@@ -90,21 +91,38 @@ namespace khasnulin
   template < class T, class Compare > void MaxHeap< T, Compare >::siftUp(size_type node)
   {
     size_type par = parent(node);
-    if (par != node && compare_(heap_[par], heap_[node]))
+    while (node > 0 && compare_(heap_[par], heap_[node]))
     {
       std::swap(heap_[par], heap_[node]);
-      siftUp(par);
+      node = par;
+      par = parent(node);
     }
+  }
+
+  template < class T, class Compare > void MaxHeap< T, Compare >::push(const_reference value)
+  {
+    heap_.pushBack(value);
+    siftUp(size() - 1);
+  }
+
+  template < class T, class Compare > void MaxHeap< T, Compare >::push(value_type &&value)
+  {
+    heap_.pushBack(std::move(value));
+    siftUp(size() - 1);
+  }
+
+  template < class T, class Compare >
+  typename MaxHeap< T, Compare >::const_reference MaxHeap< T, Compare >::top() const
+  {
+    if (empty())
+    {
+      throw std::out_of_range("heap is empty");
+    }
+    return heap_[0];
   }
 
   template < class T, class Compare > void MaxHeap< T, Compare >::siftDown(size_type node)
   {
-    size_type par = parent(node);
-    if (par != node && compare_(heap_[par], heap_[node]))
-    {
-      std::swap(heap_[par], heap_[node]);
-      siftUp(par);
-    }
   }
 }
 
