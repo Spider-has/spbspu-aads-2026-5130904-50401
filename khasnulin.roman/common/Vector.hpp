@@ -66,7 +66,7 @@ namespace khasnulin
     void pushBack(T &&val);
 
     void pushBackCount(size_t k, const T &val);
-    void unsafePushBack(size_t k, const T &val);
+    template < class Val > void unsafePushBack(size_t k, Val &&val);
 
     template < class IT > void pushBackRange(IT start, size_t count);
 
@@ -568,6 +568,21 @@ namespace khasnulin
     }
   }
 
+  template < class T > void Vector< T >::pushBack(T &&val)
+  {
+    if (size_ >= cap_)
+    {
+      Vector< T > new_vec{*this, cap_ ? cap_ * 2 : 1};
+      new_vec.unsafePushBack(1, std::move(val));
+      swap(new_vec);
+    }
+    else
+    {
+      data_[size_] = std::move(val);
+      size_++;
+    }
+  }
+
   template < class T > void Vector< T >::pushBackCount(size_t k, const T &val)
   {
     if (!k)
@@ -580,11 +595,11 @@ namespace khasnulin
     swap(new_vec);
   }
 
-  template < class T > void Vector< T >::unsafePushBack(size_t k, const T &val)
+  template < class T > template < class Val > void Vector< T >::unsafePushBack(size_t k, Val &&val)
   {
     for (size_t i = 0; i < k; ++i)
     {
-      data_[i + size_] = val;
+      data_[i + size_] = std::forward< Val && >(val);
     }
     size_ += k;
   }

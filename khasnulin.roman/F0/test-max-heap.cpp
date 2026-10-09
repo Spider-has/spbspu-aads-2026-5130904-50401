@@ -263,6 +263,30 @@ public:
     val.wasMoved_ = true;
   }
 
+  MovingObject &operator=(const MovingObject &rhs)
+  {
+    if (this != &rhs)
+    {
+      wasMoved_ = rhs.wasMoved_;
+    }
+    return *this;
+  }
+
+  MovingObject &operator=(MovingObject &&rhs) noexcept
+  {
+    if (this != &rhs)
+    {
+      wasMoved_ = rhs.wasMoved_;
+      rhs.wasMoved_ = true;
+    }
+    return *this;
+  }
+
+  bool operator<(const MovingObject &rhs) const
+  {
+    return wasMoved_ < rhs.wasMoved_;
+  }
+
   bool isMoved() const noexcept
   {
     return wasMoved_;

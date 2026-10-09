@@ -4,6 +4,7 @@
 #include "Vector.hpp"
 #include <cstddef>
 #include <stdexcept>
+#include <utility>
 
 namespace khasnulin
 {
@@ -150,6 +151,34 @@ namespace khasnulin
         rightC = rightChild(node);
       }
     }
+  }
+
+  template < class T, class Compare > void MaxHeap< T, Compare >::pop()
+  {
+    if (empty())
+    {
+      throw std::out_of_range("Can't pop from empty heap");
+    }
+    std::swap(heap_[0], heap_[size() - 1]);
+    heap_.popBack();
+    siftDown(0);
+  }
+
+  template < class T, class Compare > bool MaxHeap< T, Compare >::empty() const noexcept
+  {
+    return heap_.isEmpty();
+  }
+
+  template < class T, class Compare >
+  typename MaxHeap< T, Compare >::size_type MaxHeap< T, Compare >::size() const noexcept
+  {
+    return heap_.getSize();
+  }
+
+  template < class T, class Compare > void MaxHeap< T, Compare >::swap(MaxHeap &rhs) noexcept
+  {
+    std::swap(compare_, rhs.compare_);
+    std::swap(heap_, rhs.heap_);
   }
 }
 
