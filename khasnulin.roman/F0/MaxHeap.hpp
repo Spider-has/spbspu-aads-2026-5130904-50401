@@ -123,6 +123,33 @@ namespace khasnulin
 
   template < class T, class Compare > void MaxHeap< T, Compare >::siftDown(size_type node)
   {
+    size_type leftC = leftChild(node);
+    size_type rightC = rightChild(node);
+    size_type s = size();
+    bool swapped = true;
+    while (leftC < s && swapped)
+    {
+      swapped = false;
+      size_type maxC = node;
+      if (compare_(heap_[node], heap_[leftC]))
+      {
+        maxC = leftC;
+      }
+
+      if (rightC < s && compare_(heap_[maxC], heap_[rightC]))
+      {
+        maxC = rightC;
+      }
+
+      if (maxC != node)
+      {
+        std::swap(heap_[node], heap_[maxC]);
+        swapped = true;
+        node = maxC;
+        leftC = leftChild(node);
+        rightC = rightChild(node);
+      }
+    }
   }
 }
 
