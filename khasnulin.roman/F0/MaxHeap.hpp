@@ -50,6 +50,62 @@ namespace khasnulin
     Compare compare_;
     Vector< value_type > heap_;
   };
+
+  template < class T, class Compare >
+  MaxHeap< T, Compare >::MaxHeap():
+      compare_(),
+      heap_()
+  {
+  }
+
+  template < class T, class Compare >
+  MaxHeap< T, Compare >::MaxHeap(const Compare &compare):
+      compare_(compare),
+      heap_()
+  {
+  }
+
+  template < class T, class Compare >
+  typename MaxHeap< T, Compare >::size_type MaxHeap< T, Compare >::parent(size_type node) noexcept
+  {
+    if (node != 0)
+    {
+      return (node - 1) / 2;
+    }
+    return 0;
+  }
+
+  template < class T, class Compare >
+  typename MaxHeap< T, Compare >::size_type MaxHeap< T, Compare >::leftChild(size_type node) noexcept
+  {
+    return (node * 2) + 1;
+  }
+
+  template < class T, class Compare >
+  typename MaxHeap< T, Compare >::size_type MaxHeap< T, Compare >::rightChild(size_type node) noexcept
+  {
+    return (node * 2) + 2;
+  }
+
+  template < class T, class Compare > void MaxHeap< T, Compare >::siftUp(size_type node)
+  {
+    size_type par = parent(node);
+    if (par != node && compare_(heap_[par], heap_[node]))
+    {
+      std::swap(heap_[par], heap_[node]);
+      siftUp(par);
+    }
+  }
+
+  template < class T, class Compare > void MaxHeap< T, Compare >::siftDown(size_type node)
+  {
+    size_type par = parent(node);
+    if (par != node && compare_(heap_[par], heap_[node]))
+    {
+      std::swap(heap_[par], heap_[node]);
+      siftUp(par);
+    }
+  }
 }
 
 #endif
