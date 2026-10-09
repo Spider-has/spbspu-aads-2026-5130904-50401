@@ -272,6 +272,11 @@ private:
   bool wasMoved_;
 };
 
+std::ostream &operator<<(std::ostream &out, const MovingObject &rhs)
+{
+  return out << rhs.isMoved();
+}
+
 bool operator==(const MovingObject &lhs, const MovingObject &rhs)
 {
   return lhs.isMoved() == rhs.isMoved();
