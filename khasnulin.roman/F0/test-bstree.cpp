@@ -123,3 +123,54 @@ BOOST_AUTO_TEST_CASE(CustomComparatorDescendingOrder)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(IteratorsSuite)
+
+BOOST_AUTO_TEST_CASE(ForwardAndBackwardIteration)
+{
+  BSTree< int, int > tree;
+  std::vector< int > keys = {8, 3, 10, 1, 6, 14, 4, 7, 13};
+  for (int k : keys)
+  {
+    tree.insert({k, k * 10});
+  }
+
+  std::vector< int > expected_asc = {1, 3, 4, 6, 7, 8, 10, 13, 14};
+  std::vector< int > actual_asc;
+  for (auto it = tree.begin(); it != tree.end(); ++it)
+  {
+    actual_asc.push_back(it->first);
+  }
+  BOOST_TEST(actual_asc == expected_asc);
+
+  std::vector< int > expected_desc = {14, 13, 10, 8, 7, 6, 4, 3, 1};
+  std::vector< int > actual_desc;
+  auto it = tree.end();
+  while (it != tree.begin())
+  {
+    --it;
+    actual_desc.push_back((*it).first);
+  }
+  BOOST_TEST(actual_desc == expected_desc);
+}
+
+BOOST_AUTO_TEST_CASE(ConstIteratorConversionAndPostfixOps)
+{
+  BSTree< int, std::string > tree;
+  tree.insert({1, "one"});
+  tree.insert({2, "two"});
+
+  BSTree< int, std::string >::iter it = tree.begin();
+  BSTree< int, std::string >::const_iter cit = it;
+  BOOST_TEST((cit == it));
+
+  auto old_it = it++;
+  BOOST_TEST(old_it->first == 1);
+  BOOST_TEST(it->first == 2);
+
+  auto old_it2 = it--;
+  BOOST_TEST(old_it2->first == 2);
+  BOOST_TEST(it->first == 1);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
