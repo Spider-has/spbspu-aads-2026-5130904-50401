@@ -174,3 +174,94 @@ BOOST_AUTO_TEST_CASE(ConstIteratorConversionAndPostfixOps)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(RuleOfFiveAndSwapSuite)
+
+BOOST_AUTO_TEST_CASE(CopyConstructorMakesDeepCopy)
+{
+  BSTree< int, std::string > original;
+  original.insert({10, "ten"});
+  original.insert({5, "five"});
+  original.insert({15, "fifteen"});
+
+  BSTree< int, std::string > copy(original);
+
+  BOOST_TEST(copy.size() == 3u);
+  BOOST_TEST(copy.height() == 2u);
+  BOOST_TEST(copy.get(10) == "ten");
+  BOOST_TEST(copy.get(5) == "five");
+  BOOST_TEST(copy.get(15) == "fifteen");
+
+  copy.get(5) = "modified_five";
+  copy.insert({20, "twenty"});
+
+  BOOST_TEST(original.size() == 3u);
+  BOOST_TEST(original.get(5) == "five");
+  BOOST_TEST((original.find(20) == original.end()));
+}
+
+BOOST_AUTO_TEST_CASE(MoveConstructorTransfersOwnershipAndFixesFakeRootParent)
+{
+  BSTree< int, int > source;
+  source.insert({10, 100});
+  source.insert({5, 50});
+  source.insert({15, 150});
+
+  BSTree< int, int > moved(std::move(source));
+
+  BOOST_TEST(source.empty());
+  BOOST_TEST(source.size() == 0u);
+  BOOST_TEST((source.begin() == source.end()));
+
+  BOOST_TEST(moved.size() == 3u);
+  BOOST_TEST(moved.get(10) == 100);
+
+  auto it = moved.end();
+  --it;
+  BOOST_TEST(it->first == 15);
+  ++it;
+  BOOST_TEST((it == moved.end()));
+}
+
+BOOST_AUTO_TEST_CASE(CopyAndMoveAssignment)
+{
+  BSTree< int, int > t1;
+  t1.insert({1, 10});
+  t1.insert({2, 20});
+
+  BSTree< int, int > t2;
+  t2.insert({100, 1000});
+
+  t2 = t1;
+  BOOST_TEST(t2.size() == 2u);
+  BOOST_TEST(t2.get(1) == 10);
+  BOOST_TEST((t2.find(100) == t2.end()));
+
+  BSTree< int, int > t3;
+  t3 = std::move(t2);
+  BOOST_TEST(t2.empty());
+  BOOST_TEST(t3.size() == 2u);
+  BOOST_TEST(t3.get(2) == 20);
+}
+
+BOOST_AUTO_TEST_CASE(SwapExchangesTreesCorrectly)
+{
+  BSTree< int, std::string > t1;
+  t1.insert({1, "one"});
+
+  BSTree< int, std::string > t2;
+  t2.insert({10, "ten"});
+  t2.insert({20, "twenty"});
+
+  t1.swap(t2);
+
+  BOOST_TEST(t1.size() == 2u);
+  BOOST_TEST(t1.get(10) == "ten");
+  BOOST_TEST((--t1.end())->first == 20);
+
+  BOOST_TEST(t2.size() == 1u);
+  BOOST_TEST(t2.get(1) == "one");
+  BOOST_TEST((--t2.end())->first == 1);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
