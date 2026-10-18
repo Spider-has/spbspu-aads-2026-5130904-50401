@@ -186,8 +186,8 @@ BOOST_AUTO_TEST_CASE(CopyConstructorMakesDeepCopy)
 
   BSTree< int, std::string > copy(original);
 
-  BOOST_TEST(copy.size() == 3u);
-  BOOST_TEST(copy.height() == 2u);
+  BOOST_TEST(copy.size() == 3);
+  BOOST_TEST(copy.height() == 2);
   BOOST_TEST(copy.get(10) == "ten");
   BOOST_TEST(copy.get(5) == "five");
   BOOST_TEST(copy.get(15) == "fifteen");
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(CopyConstructorMakesDeepCopy)
   copy.get(5) = "modified_five";
   copy.insert({20, "twenty"});
 
-  BOOST_TEST(original.size() == 3u);
+  BOOST_TEST(original.size() == 3);
   BOOST_TEST(original.get(5) == "five");
   BOOST_TEST((original.find(20) == original.end()));
 }
@@ -210,10 +210,10 @@ BOOST_AUTO_TEST_CASE(MoveConstructorTransfersOwnershipAndFixesFakeRootParent)
   BSTree< int, int > moved(std::move(source));
 
   BOOST_TEST(source.empty());
-  BOOST_TEST(source.size() == 0u);
+  BOOST_TEST(source.size() == 0);
   BOOST_TEST((source.begin() == source.end()));
 
-  BOOST_TEST(moved.size() == 3u);
+  BOOST_TEST(moved.size() == 3);
   BOOST_TEST(moved.get(10) == 100);
 
   auto it = moved.end();
@@ -233,14 +233,14 @@ BOOST_AUTO_TEST_CASE(CopyAndMoveAssignment)
   t2.insert({100, 1000});
 
   t2 = t1;
-  BOOST_TEST(t2.size() == 2u);
+  BOOST_TEST(t2.size() == 2);
   BOOST_TEST(t2.get(1) == 10);
   BOOST_TEST((t2.find(100) == t2.end()));
 
   BSTree< int, int > t3;
   t3 = std::move(t2);
   BOOST_TEST(t2.empty());
-  BOOST_TEST(t3.size() == 2u);
+  BOOST_TEST(t3.size() == 2);
   BOOST_TEST(t3.get(2) == 20);
 }
 
@@ -255,13 +255,76 @@ BOOST_AUTO_TEST_CASE(SwapExchangesTreesCorrectly)
 
   t1.swap(t2);
 
-  BOOST_TEST(t1.size() == 2u);
+  BOOST_TEST(t1.size() == 2);
   BOOST_TEST(t1.get(10) == "ten");
   BOOST_TEST((--t1.end())->first == 20);
 
-  BOOST_TEST(t2.size() == 1u);
+  BOOST_TEST(t2.size() == 1);
   BOOST_TEST(t2.get(1) == "one");
   BOOST_TEST((--t2.end())->first == 1);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(EraseSuite)
+
+BOOST_AUTO_TEST_CASE(EraseLeafAndSingleChildNode)
+{
+  BSTree< int, int > tree;
+  for (int k : {10, 5, 15, 2, 9, 13})
+  {
+    tree.insert({k, k});
+  }
+
+  tree.erase(2);
+  BOOST_TEST(tree.size() == 5);
+  BOOST_TEST((tree.find(2) == tree.end()));
+
+  tree.erase(15);
+  BOOST_TEST(tree.size() == 4);
+  BOOST_TEST((tree.find(15) == tree.end()));
+  BOOST_TEST((tree.find(13) != tree.end()));
+
+  std::vector< int > remaining;
+  for (const auto &p : tree)
+  {
+    remaining.push_back(p.first);
+  }
+  std::vector< int > expected = {5, 9, 10, 13};
+  BOOST_TEST(remaining == expected);
+}
+
+BOOST_AUTO_TEST_CASE(EraseNodeWithTwoChildrenAndIteratorStability)
+{
+  BSTree< int, int > tree;
+  for (int k : {10, 5, 15, 2, 9, 13, 20})
+  {
+    tree.insert({k, k * 10});
+  }
+
+  auto it_9 = tree.find(9);
+  auto it_13 = tree.find(13);
+  const auto *addr_9 = &(*it_9);
+  const auto *addr_13 = &(*it_13);
+
+  auto next_it = tree.erase(tree.find(10));
+
+  BOOST_TEST((next_it == it_13));
+  BOOST_TEST(tree.size() == 6);
+  BOOST_TEST((tree.find(10) == tree.end()));
+
+  BOOST_TEST(&(*it_9) == addr_9);
+  BOOST_TEST(&(*it_13) == addr_13);
+  BOOST_TEST(it_9->first == 9);
+  BOOST_TEST(it_13->first == 13);
+
+  std::vector< int > actual;
+  for (const auto &p : tree)
+  {
+    actual.push_back(p.first);
+  }
+  std::vector< int > expected = {2, 5, 9, 13, 15, 20};
+  BOOST_TEST(actual == expected);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
