@@ -328,3 +328,84 @@ BOOST_AUTO_TEST_CASE(EraseNodeWithTwoChildrenAndIteratorStability)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(RotationsAndHeightSuite)
+
+BOOST_AUTO_TEST_CASE(SubtreeHeightCalculation)
+{
+  BSTree< int, int > tree;
+  for (int k : {1, 2, 3, 4})
+  {
+    tree.insert({k, k});
+  }
+
+  BOOST_TEST(tree.height() == 4);
+  BOOST_TEST(tree.height(tree.find(1)) == 4);
+  BOOST_TEST(tree.height(tree.find(2)) == 3);
+  BOOST_TEST(tree.height(tree.find(4)) == 1);
+  BOOST_TEST(tree.height(tree.end()) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(SmallLeftAndRightRotationsPreserveInvariantsAndIterators)
+{
+  BSTree< int, int > tree;
+
+  tree.insert({10, 100});
+  tree.insert({20, 200});
+  tree.insert({30, 300});
+
+  BOOST_TEST(tree.height() == 3u);
+
+  auto it_10 = tree.find(10);
+  auto it_20 = tree.find(20);
+  auto it_30 = tree.find(30);
+  const auto *addr_20 = &(*it_20);
+
+  auto res_it = tree.rotateLeft(it_20);
+
+  BOOST_TEST((res_it == it_20));
+  BOOST_TEST(tree.height() == 2u);
+  BOOST_TEST(&(*it_20) == addr_20);
+
+  auto res_it2 = tree.rotateRight(it_10);
+  BOOST_TEST((res_it2 == it_10));
+  BOOST_TEST(tree.height() == 3u);
+
+  std::vector< int > order;
+  for (const auto &p : tree)
+  {
+    order.push_back(p.first);
+  }
+  std::vector< int > expected = {10, 20, 30};
+  BOOST_TEST(order == expected);
+}
+
+BOOST_AUTO_TEST_CASE(LargeLeftAndRightRotations)
+{
+  BSTree< int, int > tree;
+  tree.insert({10, 1});
+  tree.insert({30, 3});
+  tree.insert({20, 2});
+
+  BOOST_TEST(tree.height() == 3);
+
+  auto it_20 = tree.find(20);
+  tree.rotateLargeLeft(it_20);
+
+  BOOST_TEST(tree.height() == 2);
+  BOOST_TEST(tree.height(it_20) == 2);
+}
+
+BOOST_AUTO_TEST_CASE(InvalidRotationsThrowException)
+{
+  BSTree< int, int > tree;
+  tree.insert({10, 1});
+  tree.insert({5, 2});
+
+  BOOST_CHECK_THROW(tree.rotateLeft(tree.end()), std::logic_error);
+  BOOST_CHECK_THROW(tree.rotateLeft(tree.find(10)), std::logic_error);
+
+  BOOST_CHECK_THROW(tree.rotateLeft(tree.find(5)), std::logic_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
