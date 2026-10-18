@@ -1,6 +1,8 @@
 #ifndef BSTREE_HPP
 #define BSTREE_HPP
 
+#include "BSNode.hpp"
+#include "BSTreeIter.hpp"
 #include <cstddef>
 #include <functional>
 #include <utility>
@@ -12,21 +14,6 @@ namespace khasnulin
   template < class Key, class Value > using BSTreeIter = BSTreeIterator< Key, Value, false >;
 
   template < class Key, class Value > using CBSTreeIter = BSTreeIterator< Key, Value, true >;
-
-  template < class Key, class Value > struct Node
-  {
-    using value_pair = std::pair< const Key, Value >;
-
-    Node *parent;
-    Node *left;
-    Node *right;
-    value_pair val;
-
-    Node();
-
-    Node(const value_pair &rhs);
-    Node(value_pair &&rhs);
-  };
 
   template < class Key, class Value, class Compare = std::less< Key > > class BSTree
   {
