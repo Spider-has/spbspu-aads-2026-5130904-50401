@@ -409,3 +409,59 @@ BOOST_AUTO_TEST_CASE(InvalidRotationsThrowException)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+namespace
+{
+  struct TraversalCollector
+  {
+    int key_sum = 0;
+    std::vector< int > order;
+
+    void operator()(const std::pair< const int, std::string > &kv)
+    {
+      key_sum += kv.first;
+      order.push_back(kv.first);
+    }
+  };
+}
+
+BOOST_AUTO_TEST_SUITE(TraversalsSuite)
+
+BOOST_AUTO_TEST_CASE(TraversalsOnPopulatedTree)
+{
+  BSTree< int, std::string > tree;
+  for (int k : {8, 3, 10, 1, 6, 14, 4, 7, 13})
+  {
+    tree.insert({k, std::to_string(k)});
+  }
+
+  TraversalCollector lnr = tree.traverseLNR(TraversalCollector{});
+  std::vector< int > expected_lnr = {1, 3, 4, 6, 7, 8, 10, 13, 14};
+  BOOST_TEST(lnr.key_sum == 66);
+  BOOST_TEST(lnr.order == expected_lnr);
+
+  TraversalCollector rnl = tree.traverseRNL(TraversalCollector{});
+  std::vector< int > expected_rnl = {14, 13, 10, 8, 7, 6, 4, 3, 1};
+  BOOST_TEST(rnl.key_sum == 66);
+  BOOST_TEST(rnl.order == expected_rnl);
+
+  TraversalCollector bfs = tree.traverseBreadth(TraversalCollector{});
+  std::vector< int > expected_bfs = {8, 3, 10, 1, 6, 14, 4, 7, 13};
+  BOOST_TEST(bfs.key_sum == 66);
+  BOOST_TEST(bfs.order == expected_bfs);
+}
+
+BOOST_AUTO_TEST_CASE(TraversalsOnEmptyTree)
+{
+  const BSTree< int, std::string > empty_tree;
+
+  TraversalCollector res1 = empty_tree.traverseLNR(TraversalCollector{});
+  TraversalCollector res2 = empty_tree.traverseRNL(TraversalCollector{});
+  TraversalCollector res3 = empty_tree.traverseBreadth(TraversalCollector{});
+
+  BOOST_TEST(res1.order.empty());
+  BOOST_TEST(res2.order.empty());
+  BOOST_TEST(res3.order.empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
