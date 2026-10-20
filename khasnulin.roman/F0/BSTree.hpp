@@ -5,6 +5,7 @@
 #include "BSTreeIter.hpp"
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <utility>
 
 namespace khasnulin
@@ -29,8 +30,6 @@ namespace khasnulin
     using iter = BSTreeIter< Key, Value >;
     using const_iter = CBSTreeIter< Key, Value >;
 
-    ~BSTree();
-
     BSTree();
 
     explicit BSTree(Compare comparator);
@@ -41,10 +40,12 @@ namespace khasnulin
     BSTree &operator=(const BSTree &rhs);
     BSTree &operator=(BSTree &&rhs) noexcept;
 
+    ~BSTree() noexcept;
+
     bool empty() const noexcept;
     size_type size() const noexcept;
 
-    // ВОзвращает высоту самого длинного пути от корня в дереве
+    // Возвращает высоту самого длинного пути от корня в дереве
     size_type height() const;
     // Возвращает высоту самого длинного пути от текущего элемента в корне.
     size_type height(const_iter it) const;
@@ -98,11 +99,290 @@ namespace khasnulin
   private:
     size_type size_;
 
-    Node< Key, Value > fake_root_;
+    Node< Key, Value > fakeRoot_;
 
     Compare comparator_;
   };
 
+  template < class Key, class Value, class Compare >
+  BSTree< Key, Value, Compare >::BSTree():
+      size_(0),
+      fakeRoot_(),
+      comparator_()
+  {
+  }
+
+  template < class Key, class Value, class Compare >
+  BSTree< Key, Value, Compare >::BSTree(Compare comparator):
+      size_(0),
+      fakeRoot_(),
+      comparator_(comparator)
+  {
+  }
+
+  template < class Key, class Value, class Compare >
+  BSTree< Key, Value, Compare >::BSTree(const BSTree &rhs):
+      size_(0),
+      fakeRoot_(),
+      comparator_(rhs.comparator_)
+  {
+    // TODO: add deep copy
+  }
+
+  template < class Key, class Value, class Compare >
+  BSTree< Key, Value, Compare >::BSTree(BSTree &&rhs) noexcept:
+      size_(rhs.size_),
+      fakeRoot_(),
+      comparator_(rhs.comparator_)
+  {
+    fakeRoot_.left = rhs.fakeRoot_.left;
+    if (fakeRoot_.left != nullptr)
+    {
+      fakeRoot_.left->parent = &fakeRoot_;
+    }
+    rhs.size_ = 0;
+    rhs.fakeRoot_.left = nullptr;
+  }
+
+  template < class Key, class Value, class Compare >
+  BSTree< Key, Value, Compare > &BSTree< Key, Value, Compare >::operator=(const BSTree &rhs)
+  {
+    if (std::addressof(rhs) == this)
+    {
+      return *this;
+    }
+    // TODO copy and swap idiom
+    return *this;
+  }
+
+  template < class Key, class Value, class Compare >
+  BSTree< Key, Value, Compare > &BSTree< Key, Value, Compare >::operator=(BSTree &&rhs) noexcept
+  {
+    if (std::addressof(rhs) == this)
+    {
+      return *this;
+    }
+
+    swap(rhs);
+    return *this;
+  }
+
+  template < class Key, class Value, class Compare > BSTree< Key, Value, Compare >::~BSTree() noexcept
+  {
+    // TODO: add clear;
+  }
+
+  template < class Key, class Value, class Compare >
+  bool BSTree< Key, Value, Compare >::empty() const noexcept
+  {
+    return size_ == 0;
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::size_type BSTree< Key, Value, Compare >::size() const noexcept
+  {
+    return size_;
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::size_type BSTree< Key, Value, Compare >::height() const
+  {
+    // TODO: add BFS to find max height;
+    return 0;
+  }
+
+  // Возвращает высоту самого длинного пути от текущего элемента в корне.
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::size_type BSTree< Key, Value, Compare >::height(const_iter it) const
+  {
+    // TODO: add BFS for iter to find max height;
+    return 0;
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::begin() noexcept
+  {
+    // TODO: add getting min node in tree;
+    Node< Key, Value > *minNode = nullptr;
+    return iter(minNode);
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::const_iter BSTree< Key, Value, Compare >::begin() const noexcept
+  {
+    return const_iter(const_cast< BSTree< Key, Value, Compare > * >(this)->begin());
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::const_iter BSTree< Key, Value, Compare >::cbegin() const noexcept
+  {
+    return const_iter(begin());
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::end() noexcept
+  {
+    return iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::const_iter BSTree< Key, Value, Compare >::end() const noexcept
+  {
+    return const_iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::const_iter BSTree< Key, Value, Compare >::cend() const noexcept
+  {
+    return const_iter(end());
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::value_type &BSTree< Key, Value, Compare >::get(const Key &k)
+  {
+    // TODO: add simple find method usage and return .second from pair;
+    return fakeRoot_.val.second;
+  }
+
+  template < class Key, class Value, class Compare >
+  const typename BSTree< Key, Value, Compare >::value_type &
+  BSTree< Key, Value, Compare >::get(const Key &k) const
+  {
+    // TODO: add simple find method usage and return .second from pair;
+    return fakeRoot_.val.second;
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::value_type &BSTree< Key, Value, Compare >::operator[](const Key &k)
+  {
+    // TODO: add simple find method usage, return second if we find it by key, if recieve nullptr then try to
+    // insert new node with such key and empty value, return created value after insertion;
+    return fakeRoot_.val.second;
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::find(const Key &k)
+  {
+    // TODO: add simple find method usage and construct iter from node;
+    return iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::const_iter BSTree< Key, Value, Compare >::find(const Key &k) const
+  {
+    // TODO: add simple find method usage and construct iter from node;
+    return const_iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare >
+  void BSTree< Key, Value, Compare >::insert(const public_value_pair_type &pair)
+  {
+    // TODO: find a parent for new node by simple find method, create new node with that parent (copy semantic
+    // constructuctor
+  }
+
+  template < class Key, class Value, class Compare >
+  void BSTree< Key, Value, Compare >::insert(public_value_pair_type &&pair)
+  {
+    // TODO: find a parent for new node by simple find method, create new node with that parent (move semantic
+    // constructuctor)
+  }
+
+  template < class Key, class Value, class Compare > void BSTree< Key, Value, Compare >::erase(const Key &k)
+  {
+    // TODO: find an elem with such key, if there no item with such key -> throw out of range, if we have that
+    // node, than we analise its child nodes and choose on of them to replace current node, then delete this
+    // node;
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::erase(const_iter it)
+  {
+    // TODO: check iter refers to key in this tree, if not -> throw out of range error, else we get next elem
+    // of this node and analise its child nodes and choose on of them to replace current node, than delete
+    // this node, then return next elem
+    return iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare > void BSTree< Key, Value, Compare >::clear() noexcept
+  {
+    // TODO:: use LRN travese to delete all nodes in tree from down to upper root
+  }
+
+  template < class Key, class Value, class Compare >
+  void BSTree< Key, Value, Compare >::swap(BSTree &rhs) noexcept
+  {
+    if (std::addressof(rhs) == this)
+    {
+      return;
+    }
+
+    std::swap(fakeRoot_.left, rhs.fakeRoot_.left);
+    if (fakeRoot_.left)
+    {
+      fakeRoot_.left->parent = &fakeRoot_;
+    }
+    if (rhs.fakeRoot_.left)
+    {
+      rhs.fakeRoot_.left->parent = &rhs.fakeRoot_;
+    }
+
+    std::swap(size_, rhs.size_);
+    std::swap(comparator_, rhs.comparator_);
+  }
+
+  // 4 метода поворотов для будущей обретки других деревьев.
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::rotateLeft(const_iter it)
+  {
+    // Add tree left rotation, return new node in place of old node;
+    return iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::rotateRight(const_iter it)
+  {
+    // Add tree right rotation, return new node in place of old node;
+    return iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::rotateLargeLeft(const_iter it)
+  {
+    // Add tree large left rotation, return new node in place of old node;
+    return iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::rotateLargeRight(const_iter it)
+  {
+    // Add tree large right rotation, return new node in place of old node;
+    return iter(&fakeRoot_);
+  }
+
+  template < class Key, class Value, class Compare >
+  template < class F >
+  F BSTree< Key, Value, Compare >::traverseLNR(F f) const
+  {
+    // TODO:: add LNR traverse with F func. It can be just with iters
+    return f;
+  }
+
+  template < class Key, class Value, class Compare >
+  template < class F >
+  F BSTree< Key, Value, Compare >::traverseRNL(F f) const
+  {
+    // TODO:: add RNL traverse with F func. It can be just with iters
+    return f;
+  }
+
+  template < class Key, class Value, class Compare >
+  template < class F >
+  F BSTree< Key, Value, Compare >::traverseBreadth(F f) const
+  {
+    // TODO:: add BFS traverse with F func. It can be just with iters
+    return f;
+  }
 }
 
 #endif
