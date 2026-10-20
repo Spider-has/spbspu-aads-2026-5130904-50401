@@ -85,7 +85,7 @@ namespace khasnulin
   template < class Key, class Value, bool IsConst >
   BSTreeIterator< Key, Value, IsConst > &BSTreeIterator< Key, Value, IsConst >::operator++() noexcept
   {
-    // TODO:: call nextNode for curr node method
+    node_ = nextNode(node_);
     return *this;
   }
 
@@ -100,7 +100,7 @@ namespace khasnulin
   template < class Key, class Value, bool IsConst >
   BSTreeIterator< Key, Value, IsConst > &BSTreeIterator< Key, Value, IsConst >::operator--() noexcept
   {
-    // TODO call prev node method for curr node
+    node_ = prevNode(node_);
     return *this;
   }
 
