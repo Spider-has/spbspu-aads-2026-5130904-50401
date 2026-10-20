@@ -212,9 +212,8 @@ namespace khasnulin
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::begin() noexcept
   {
-    // TODO: add getting min node in tree;
-    Node< Key, Value > *minNode = nullptr;
-    return iter(minNode);
+    Node< Key, Value > *min = minNode(&fakeRoot_);
+    return iter(min);
   }
 
   template < class Key, class Value, class Compare >
