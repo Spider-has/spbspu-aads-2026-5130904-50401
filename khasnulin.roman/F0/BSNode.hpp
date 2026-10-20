@@ -14,17 +14,17 @@ namespace khasnulin
     Node *right;
     value_pair val;
 
-    Node();
+    Node() noexcept;
 
-    Node(const value_pair &rhs);
-    Node(value_pair &&rhs);
+    explicit Node(const value_pair &rhs);
+    explicit Node(value_pair &&rhs);
 
     Node(const Node &) = delete;
     Node &operator=(const Node &) = delete;
   };
 
   template < class Key, class Value >
-  Node< Key, Value >::Node():
+  Node< Key, Value >::Node() noexcept:
       parent(nullptr),
       left(nullptr),
       right(nullptr),
@@ -48,6 +48,26 @@ namespace khasnulin
       right(nullptr),
       val(std::move(rhs))
   {
+  }
+
+  template < class NodePtr > NodePtr minNode(NodePtr node) noexcept
+  {
+    assert(node != nullptr && "node can't be nullptr");
+    while (node->left)
+    {
+      node = node->left;
+    }
+    return node;
+  }
+
+  template < class NodePtr > NodePtr maxNode(NodePtr node) noexcept
+  {
+    assert(node != nullptr && "node can't be nullptr");
+    while (node->right)
+    {
+      node = node->right;
+    }
+    return node;
   }
 
   template < class NodePtr > NodePtr nextNode(NodePtr node) noexcept
@@ -84,25 +104,6 @@ namespace khasnulin
     return node;
   }
 
-  template < class NodePtr > NodePtr minNode(NodePtr node) noexcept
-  {
-    assert(node != nullptr && "node can't be nullptr");
-    while (node->left)
-    {
-      node = node->left;
-    }
-    return node;
-  }
-
-  template < class NodePtr > NodePtr maxNode(NodePtr node) noexcept
-  {
-    assert(node != nullptr && "node can't be nullptr");
-    while (node->right)
-    {
-      node = node->right;
-    }
-    return node;
-  }
 }
 
 #endif

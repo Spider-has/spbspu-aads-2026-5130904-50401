@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -80,12 +81,13 @@ namespace khasnulin
     iter find(const Key &k);
     const_iter find(const Key &k) const;
 
-    // вставить элемент value в дереве по ключу.
-    void insert(const value_type &pair);
-    void insert(value_type &&pair);
+    // вставить элемент value в дереве по ключу и вернуть итератор на него. Если key уже есть в дереве, просто
+    // возвращает iter на этот элемент без изменений.
+    iter insert(const value_type &pair);
+    iter insert(value_type &&pair);
 
     // удалить элемент с ключом k из дерева
-    void erase(const Key &k);
+    size_t erase(const Key &k);
     // удалить элемент по итератору. вернуть итератор на следующий элемент
     iter erase(const_iter it);
 
@@ -107,6 +109,17 @@ namespace khasnulin
     template < class F > F traverseBreadth(F f) const;
 
   private:
+    struct FindResult
+    {
+      Node< Key, Value > *node;
+      Node< Key, Value > *parent;
+      bool isLeft;
+    };
+    // const метод возвращает не const данные. Сделано специально для внутренного использования.
+    FindResult findByKey(const Key &k) const;
+    template < class P > iter insertImpl(P &&pair);
+    void addNewNodeToTree(Node< Key, Value > *node, Node< Key, Value > *parent, bool isLeft) noexcept;
+
     size_type size_;
 
     Node< Key, Value > fakeRoot_;
@@ -143,7 +156,7 @@ namespace khasnulin
   BSTree< Key, Value, Compare >::BSTree(BSTree &&rhs) noexcept:
       size_(rhs.size_),
       fakeRoot_(),
-      comparator_(rhs.comparator_)
+      comparator_(std::move(rhs.comparator_))
   {
     fakeRoot_.left = rhs.fakeRoot_.left;
     if (fakeRoot_.left != nullptr)
@@ -249,59 +262,130 @@ namespace khasnulin
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::mapped_type &BSTree< Key, Value, Compare >::get(const Key &k)
   {
-    // TODO: add simple find method usage and return .second from pair;
-    return fakeRoot_.val.second;
+    FindResult result = findByKey(k);
+    if (!result.node)
+    {
+      throw std::out_of_range("can't find node with such key in tree");
+    }
+    return result.node->val.second;
   }
 
   template < class Key, class Value, class Compare >
   const typename BSTree< Key, Value, Compare >::mapped_type &
   BSTree< Key, Value, Compare >::get(const Key &k) const
   {
-    // TODO: add simple find method usage and return .second from pair;
-    return fakeRoot_.val.second;
+    FindResult result = findByKey(k);
+    if (!result.node)
+    {
+      throw std::out_of_range("can't find node with such key in tree");
+    }
+    return result.node->val.second;
   }
 
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::mapped_type &BSTree< Key, Value, Compare >::operator[](const Key &k)
   {
-    // TODO: add simple find method usage, return second if we find it by key, if recieve nullptr then try to
-    // insert new node with such key and empty value, return created value after insertion;
-    return fakeRoot_.val.second;
+    FindResult result = findByKey(k);
+    if (result.node)
+    {
+      return result.node->val.second;
+    }
+    Node< Key, Value > *newNode = new Node< Key, Value >({k, Value()});
+    addNewNodeToTree(newNode, result.parent, result.isLeft);
+    return newNode->val.second;
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::FindResult
+  BSTree< Key, Value, Compare >::findByKey(const Key &k) const
+  {
+    Node< Key, Value > *parent = const_cast< Node< Key, Value > * >(&fakeRoot_);
+    Node< Key, Value > *curr = fakeRoot_.left;
+    bool isLeft = true;
+    while (curr)
+    {
+      if (comparator_(k, curr->val.first))
+      {
+        parent = curr;
+        curr = curr->left;
+        isLeft = true;
+      }
+      else if (comparator_(curr->val.first, k))
+      {
+        parent = curr;
+        curr = curr->right;
+        isLeft = false;
+      }
+      else
+      {
+        return {curr, parent, isLeft};
+      }
+    }
+    return {nullptr, parent, isLeft};
   }
 
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::find(const Key &k)
   {
-    // TODO: add simple find method usage and construct iter from node;
-    return iter(&fakeRoot_);
+    FindResult result = findByKey(k);
+    return result.node ? iter(result.node) : end();
   }
 
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::const_iter BSTree< Key, Value, Compare >::find(const Key &k) const
   {
-    // TODO: add simple find method usage and construct iter from node;
-    return const_iter(&fakeRoot_);
+    FindResult result = findByKey(k);
+    return result.node ? const_iter(result.node) : end();
   }
 
   template < class Key, class Value, class Compare >
-  void BSTree< Key, Value, Compare >::insert(const value_type &pair)
+  void BSTree< Key, Value, Compare >::addNewNodeToTree(Node< Key, Value > *node, Node< Key, Value > *parent,
+                                                       bool isLeft) noexcept
   {
-    // TODO: find a parent for new node by simple find method, create new node with that parent (copy semantic
-    // constructuctor
+    if (isLeft)
+    {
+      parent->left = node;
+    }
+    else
+    {
+      parent->right = node;
+    }
+    node->parent = parent;
+    ++size_;
   }
 
   template < class Key, class Value, class Compare >
-  void BSTree< Key, Value, Compare >::insert(value_type &&pair)
+  template < class P >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::insertImpl(P &&pair)
   {
-    // TODO: find a parent for new node by simple find method, create new node with that parent (move semantic
-    // constructuctor)
+    FindResult result = findByKey(pair.first);
+    if (result.node)
+    {
+      return iter(result.node);
+    }
+    Node< Key, Value > *newNode = new Node< Key, Value >(std::forward< P >(pair));
+    addNewNodeToTree(newNode, result.parent, result.isLeft);
+    return iter(newNode);
   }
 
-  template < class Key, class Value, class Compare > void BSTree< Key, Value, Compare >::erase(const Key &k)
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::insert(const value_type &pair)
+  {
+    return insertImpl(pair);
+  }
+
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::insert(value_type &&pair)
+  {
+    return insertImpl(std::move(pair));
+  }
+
+  template < class Key, class Value, class Compare > size_t BSTree< Key, Value, Compare >::erase(const Key &k)
   {
     // TODO: find an elem with such key, if there no item with such key -> throw out of range, if we have that
     // node, than we analise its child nodes and choose on of them to replace current node, then delete this
     // node;
+    return 0;
   }
 
   template < class Key, class Value, class Compare >
