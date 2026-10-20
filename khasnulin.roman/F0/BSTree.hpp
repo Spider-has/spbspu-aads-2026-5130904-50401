@@ -134,7 +134,6 @@ namespace khasnulin
   Node< Key, Value > *BSTree< Key, Value, Compare >::removeNodeWithRotation(Node< Key, Value > *node) noexcept
   {
     assert(node != nullptr && node != &fakeRoot_);
-    assert(node->left == nullptr && node->right == nullptr);
     Node< Key, Value > *parent = node->parent;
     Node< Key, Value > *oldNode = node;
     Node< Key, Value > *newNode = oldNode->left ? oldNode->left : oldNode->right;
@@ -628,7 +627,10 @@ namespace khasnulin
   template < class F >
   F BSTree< Key, Value, Compare >::traverseLNR(F f) const
   {
-    // TODO:: add LNR traverse with F func. It can be just with iters
+    for (const_iter it = begin(), e = end(); it != e; ++it)
+    {
+      f(*it);
+    }
     return f;
   }
 
@@ -636,7 +638,17 @@ namespace khasnulin
   template < class F >
   F BSTree< Key, Value, Compare >::traverseRNL(F f) const
   {
-    // TODO:: add RNL traverse with F func. It can be just with iters
+    if (begin() == end())
+    {
+      return f;
+    }
+    const_iter it = end();
+    const_iter b = begin();
+    do
+    {
+      --it;
+      f(*it);
+    } while (it != b);
     return f;
   }
 
