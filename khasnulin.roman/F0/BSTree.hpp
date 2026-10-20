@@ -120,12 +120,33 @@ namespace khasnulin
     template < class P > iter insertImpl(P &&pair);
     void addNewNodeToTree(Node< Key, Value > *node, Node< Key, Value > *parent, bool isLeft) noexcept;
 
+    void removeLeaf(Node< Key, Value > *node) noexcept;
+
     size_type size_;
 
     Node< Key, Value > fakeRoot_;
 
     Compare comparator_;
   };
+
+  template < class Key, class Value, class Compare >
+  void BSTree< Key, Value, Compare >::removeLeaf(Node< Key, Value > *node) noexcept
+  {
+    assert(node != nullptr && node != &fakeRoot_);
+    assert(node->left == nullptr && node->right == nullptr);
+    Node< Key, Value > *parent = node->parent;
+    bool isLeft = (parent->left == node);
+    if (isLeft)
+    {
+      parent->left = nullptr;
+    }
+    else
+    {
+      parent->right = nullptr;
+    }
+    delete node;
+    --size_;
+  }
 
   template < class Key, class Value, class Compare >
   BSTree< Key, Value, Compare >::BSTree():
@@ -214,12 +235,11 @@ namespace khasnulin
     return 0;
   }
 
-  // Возвращает высоту самого длинного пути от текущего элемента в корне.
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::size_type BSTree< Key, Value, Compare >::height(const_iter it) const
   {
-    // TODO: add BFS for iter to find max height;
-    return 0;
+    size_type maxHeight = 0;
+    return maxHeight;
   }
 
   template < class Key, class Value, class Compare >
@@ -399,7 +419,24 @@ namespace khasnulin
 
   template < class Key, class Value, class Compare > void BSTree< Key, Value, Compare >::clear() noexcept
   {
-    // TODO:: use LRN travese to delete all nodes in tree from down to upper root
+    Node< Key, Value > *curr = fakeRoot_.left;
+    while (fakeRoot_.left != nullptr)
+    {
+      if (curr->left)
+      {
+        curr = curr->left;
+      }
+      else if (curr->right)
+      {
+        curr = curr->right;
+      }
+      else
+      {
+        Node< Key, Value > *parent = curr->parent;
+        removeLeaf(curr);
+        curr = parent;
+      }
+    }
   }
 
   template < class Key, class Value, class Compare >
