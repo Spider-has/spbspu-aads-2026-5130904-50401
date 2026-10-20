@@ -170,7 +170,64 @@ namespace khasnulin
       fakeRoot_(),
       comparator_(rhs.comparator_)
   {
-    // TODO: add deep copy
+    try
+    {
+      const Node< Key, Value > *currRhs = rhs.fakeRoot_.left;
+      const Node< Key, Value > *prevRhs = &rhs.fakeRoot_;
+      Node< Key, Value > *curr = &fakeRoot_;
+      while (currRhs && currRhs != &rhs.fakeRoot_)
+      {
+        if (prevRhs == currRhs->parent)
+        {
+          Node< Key, Value > *newNode = new Node< Key, Value >(currRhs->val);
+          if (currRhs == prevRhs->left)
+          {
+            curr->left = newNode;
+            newNode->parent = curr;
+          }
+          else
+          {
+            curr->right = newNode;
+            newNode->parent = curr;
+          }
+          curr = newNode;
+          ++size_;
+          prevRhs = currRhs;
+          if (currRhs->left)
+          {
+            currRhs = currRhs->left;
+          }
+          else if (currRhs->right)
+          {
+            currRhs = currRhs->right;
+          }
+          else
+          {
+            currRhs = currRhs->parent;
+            curr = curr->parent;
+          }
+        }
+        else
+        {
+          if (currRhs->left == prevRhs && currRhs->right)
+          {
+            prevRhs = currRhs;
+            currRhs = currRhs->right;
+          }
+          else
+          {
+            prevRhs = currRhs;
+            currRhs = currRhs->parent;
+            curr = curr->parent;
+          }
+        }
+      }
+    }
+    catch (...)
+    {
+      clear();
+      throw;
+    }
   }
 
   template < class Key, class Value, class Compare >
@@ -213,7 +270,7 @@ namespace khasnulin
 
   template < class Key, class Value, class Compare > BSTree< Key, Value, Compare >::~BSTree() noexcept
   {
-    // TODO: add clear;
+    clear();
   }
 
   template < class Key, class Value, class Compare >
