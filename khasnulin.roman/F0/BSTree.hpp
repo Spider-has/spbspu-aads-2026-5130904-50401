@@ -252,7 +252,8 @@ namespace khasnulin
     {
       return *this;
     }
-    // TODO copy and swap idiom
+    BSTree tmp(rhs);
+    swap(tmp);
     return *this;
   }
 
@@ -263,7 +264,6 @@ namespace khasnulin
     {
       return *this;
     }
-
     swap(rhs);
     return *this;
   }
