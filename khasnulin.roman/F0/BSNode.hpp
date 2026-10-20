@@ -1,6 +1,7 @@
 #ifndef BSNODE_HPP
 #define BSNODE_HPP
 
+#include <cassert>
 #include <utility>
 namespace khasnulin
 {
@@ -51,26 +52,56 @@ namespace khasnulin
 
   template < class NodePtr > NodePtr nextNode(NodePtr node) noexcept
   {
-    // TODO: get next node;
-    return nullptr;
+    assert(node != nullptr && "node can't be nullptr");
+    if (node->right)
+    {
+      return minNode(node->right);
+    }
+    NodePtr prev = node;
+    node = node->parent;
+    while (node && node->right == prev)
+    {
+      prev = node;
+      node = node->parent;
+    }
+    return node;
   }
 
   template < class NodePtr > NodePtr prevNode(NodePtr node) noexcept
   {
-    // TODO: get prev node;
-    return nullptr;
+    assert(node != nullptr && "node can't be nullptr");
+    if (node->left)
+    {
+      return maxNode(node->left);
+    }
+    NodePtr prev = node;
+    node = node->parent;
+    while (node && node->left == prev)
+    {
+      prev = node;
+      node = node->parent;
+    }
+    return node;
   }
 
   template < class NodePtr > NodePtr minNode(NodePtr node) noexcept
   {
-    // TODO: get most left node;
-    return nullptr;
+    assert(node != nullptr && "node can't be nullptr");
+    while (node->left)
+    {
+      node = node->left;
+    }
+    return node;
   }
 
   template < class NodePtr > NodePtr maxNode(NodePtr node) noexcept
   {
-    // TODO: get most right node;
-    return nullptr;
+    assert(node != nullptr && "node can't be nullptr");
+    while (node->right)
+    {
+      node = node->right;
+    }
+    return node;
   }
 }
 
