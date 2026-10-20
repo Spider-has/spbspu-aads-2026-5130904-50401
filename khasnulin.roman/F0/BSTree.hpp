@@ -231,14 +231,62 @@ namespace khasnulin
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::size_type BSTree< Key, Value, Compare >::height() const
   {
-    // TODO: add BFS to find max height;
-    return 0;
+    if (size() == 0)
+    {
+      return 0;
+    }
+    return height(const_iter(fakeRoot_.left));
   }
 
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::size_type BSTree< Key, Value, Compare >::height(const_iter it) const
   {
+    if (!it.node_)
+    {
+      throw std::logic_error("can't get height of empty iter");
+    }
+    if (it == end())
+    {
+      return 0;
+    }
     size_type maxHeight = 0;
+    const Node< Key, Value > *curr = it.node_;
+    size_type currHeight = 1;
+    while (currHeight >= 1)
+    {
+      if (curr->left)
+      {
+        curr = curr->left;
+        ++currHeight;
+      }
+      else if (curr->right)
+      {
+        curr = curr->right;
+        ++currHeight;
+      }
+      else
+      {
+        maxHeight = maxHeight < currHeight ? currHeight : maxHeight;
+        int isFoundNextRight = false;
+        while (!isFoundNextRight)
+        {
+          if (curr == it.node_)
+          {
+            return maxHeight;
+          }
+          Node< Key, Value > *parent = curr->parent;
+          bool isLeft = (parent->left == curr);
+          curr = parent;
+          --currHeight;
+          if (isLeft && curr->right)
+          {
+            isFoundNextRight = true;
+            curr = curr->right;
+            ++currHeight;
+          }
+        }
+      }
+    }
     return maxHeight;
   }
 
