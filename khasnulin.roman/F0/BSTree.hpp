@@ -3,6 +3,7 @@
 
 #include "BSNode.hpp"
 #include "BSTreeIter.hpp"
+#include <boost/type.hpp>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -120,7 +121,7 @@ namespace khasnulin
     template < class P > iter insertImpl(P &&pair);
     void addNewNodeToTree(Node< Key, Value > *node, Node< Key, Value > *parent, bool isLeft) noexcept;
 
-    void removeLeaf(Node< Key, Value > *node) noexcept;
+    Node< Key, Value > *removeNodeWithRotation(Node< Key, Value > *node) noexcept;
 
     size_type size_;
 
@@ -130,22 +131,45 @@ namespace khasnulin
   };
 
   template < class Key, class Value, class Compare >
-  void BSTree< Key, Value, Compare >::removeLeaf(Node< Key, Value > *node) noexcept
+  Node< Key, Value > *BSTree< Key, Value, Compare >::removeNodeWithRotation(Node< Key, Value > *node) noexcept
   {
     assert(node != nullptr && node != &fakeRoot_);
     assert(node->left == nullptr && node->right == nullptr);
     Node< Key, Value > *parent = node->parent;
+    Node< Key, Value > *oldNode = node;
+    Node< Key, Value > *newNode = oldNode->left ? oldNode->left : oldNode->right;
     bool isLeft = (parent->left == node);
+    if (oldNode->left && oldNode->right)
+    {
+      newNode = minNode(oldNode->right);
+      oldNode->left->parent = newNode;
+      newNode->left = oldNode->left;
+      if (newNode != oldNode->right)
+      {
+        newNode->parent->left = newNode->right;
+        if (newNode->right)
+        {
+          newNode->right->parent = newNode->parent;
+        }
+        newNode->right = oldNode->right;
+        oldNode->right->parent = newNode;
+      }
+    }
     if (isLeft)
     {
-      parent->left = nullptr;
+      parent->left = newNode;
     }
     else
     {
-      parent->right = nullptr;
+      parent->right = newNode;
     }
-    delete node;
+    if (newNode)
+    {
+      newNode->parent = parent;
+    }
+    delete oldNode;
     --size_;
+    return newNode;
   }
 
   template < class Key, class Value, class Compare >
@@ -505,21 +529,26 @@ namespace khasnulin
     return insertImpl(std::move(pair));
   }
 
-  template < class Key, class Value, class Compare > size_t BSTree< Key, Value, Compare >::erase(const Key &k)
+  template < class Key, class Value, class Compare >
+  typename BSTree< Key, Value, Compare >::size_type BSTree< Key, Value, Compare >::erase(const Key &k)
   {
-    // TODO: find an elem with such key, if there no item with such key -> throw out of range, if we have that
-    // node, than we analise its child nodes and choose on of them to replace current node, then delete this
-    // node;
-    return 0;
+    FindResult result = findByKey(k);
+    if (!result.node)
+    {
+      return 0;
+    }
+    removeNodeWithRotation(result.node);
+    return 1;
   }
 
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::erase(const_iter it)
   {
-    // TODO: check iter refers to key in this tree, if not -> throw out of range error, else we get next elem
-    // of this node and analise its child nodes and choose on of them to replace current node, than delete
-    // this node, then return next elem
-    return iter(&fakeRoot_);
+    if (!it.node_ || it == end())
+    {
+      return end();
+    }
+    return iter(removeNodeWithRotation(const_cast< Node< Key, Value > * >(it.node_)));
   }
 
   template < class Key, class Value, class Compare > void BSTree< Key, Value, Compare >::clear() noexcept
@@ -538,7 +567,7 @@ namespace khasnulin
       else
       {
         Node< Key, Value > *parent = curr->parent;
-        removeLeaf(curr);
+        removeNodeWithRotation(curr);
         curr = parent;
       }
     }
