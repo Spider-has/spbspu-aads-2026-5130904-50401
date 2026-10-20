@@ -6,24 +6,34 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 namespace khasnulin
 {
-  template < class Key, class Value, bool IsConst > class BSTreeIterator;
-
   template < class Key, class Value > using BSTreeIter = BSTreeIterator< Key, Value, false >;
 
   template < class Key, class Value > using CBSTreeIter = BSTreeIterator< Key, Value, true >;
 
   template < class Key, class Value, class Compare = std::less< Key > > class BSTree
   {
+
+    static_assert(std::is_nothrow_default_constructible< Key >::value,
+                  "BSTree: Key must be nothrow default constructible (used by sentinel node)");
+    static_assert(std::is_nothrow_default_constructible< Value >::value,
+                  "BSTree: Value must be nothrow default constructible (used by sentinel node)");
+    static_assert(std::is_nothrow_destructible< Key >::value && std::is_nothrow_destructible< Value >::value,
+                  "BSTree: Key and Value destructors must not throw");
+    static_assert(std::is_nothrow_move_constructible< Compare >::value &&
+                      std::is_nothrow_move_assignable< Compare >::value,
+                  "BSTree: Compare must be nothrow movable (required by noexcept move/swap)");
+
   public:
     using key_type = Key;
-    using value_type = Value;
+    using mapped_type = Value;
     using size_type = size_t;
 
-    using public_value_pair_type = std::pair< const Key, Value >;
+    using value_type = std::pair< const Key, Value >;
 
     using comparator = Compare;
 
@@ -71,8 +81,8 @@ namespace khasnulin
     const_iter find(const Key &k) const;
 
     // вставить элемент value в дереве по ключу.
-    void insert(const public_value_pair_type &pair);
-    void insert(public_value_pair_type &&pair);
+    void insert(const mapped_type &pair);
+    void insert(mapped_type &&pair);
 
     // удалить элемент с ключом k из дерева
     void erase(const Key &k);
@@ -275,14 +285,14 @@ namespace khasnulin
   }
 
   template < class Key, class Value, class Compare >
-  void BSTree< Key, Value, Compare >::insert(const public_value_pair_type &pair)
+  void BSTree< Key, Value, Compare >::insert(const mapped_type &pair)
   {
     // TODO: find a parent for new node by simple find method, create new node with that parent (copy semantic
     // constructuctor
   }
 
   template < class Key, class Value, class Compare >
-  void BSTree< Key, Value, Compare >::insert(public_value_pair_type &&pair)
+  void BSTree< Key, Value, Compare >::insert(mapped_type &&pair)
   {
     // TODO: find a parent for new node by simple find method, create new node with that parent (move semantic
     // constructuctor)

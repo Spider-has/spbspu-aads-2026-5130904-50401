@@ -25,14 +25,6 @@ namespace khasnulin
 
     BSTreeIterator() noexcept;
 
-    // default rule of 5
-    ~BSTreeIterator() noexcept = default;
-
-    BSTreeIterator(const BSTreeIterator &rhs) noexcept = default;
-
-    BSTreeIterator &operator=(const BSTreeIterator &rhs) noexcept = default;
-    BSTreeIterator &operator=(BSTreeIterator &&rhs) noexcept = default;
-
     // для обычного iter -- обычный конструктор с const ref, для const iter -- конструктор объекта из
     // неконстантного iter
     BSTreeIterator(const BSTreeIterator< Key, Value, false > &rhs) noexcept;
