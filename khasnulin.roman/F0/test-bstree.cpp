@@ -354,22 +354,22 @@ BOOST_AUTO_TEST_CASE(SmallLeftAndRightRotationsPreserveInvariantsAndIterators)
   tree.insert({20, 200});
   tree.insert({30, 300});
 
-  BOOST_TEST(tree.height() == 3u);
+  BOOST_TEST(tree.height() == 3);
 
   auto it_10 = tree.find(10);
   auto it_20 = tree.find(20);
-  auto it_30 = tree.find(30);
+  tree.find(30);
   const auto *addr_20 = &(*it_20);
 
   auto res_it = tree.rotateLeft(it_20);
 
   BOOST_TEST((res_it == it_20));
-  BOOST_TEST(tree.height() == 2u);
+  BOOST_TEST(tree.height() == 2);
   BOOST_TEST(&(*it_20) == addr_20);
 
   auto res_it2 = tree.rotateRight(it_10);
   BOOST_TEST((res_it2 == it_10));
-  BOOST_TEST(tree.height() == 3u);
+  BOOST_TEST(tree.height() == 3);
 
   std::vector< int > order;
   for (const auto &p : tree)

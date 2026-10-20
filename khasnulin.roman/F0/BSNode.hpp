@@ -22,6 +22,33 @@ namespace khasnulin
     Node &operator=(const Node &) = delete;
   };
 
+  template < class Key, class Value >
+  Node< Key, Value >::Node():
+      parent(nullptr),
+      left(nullptr),
+      right(nullptr),
+      val()
+  {
+  }
+
+  template < class Key, class Value >
+  Node< Key, Value >::Node(const value_pair &rhs):
+      parent(nullptr),
+      left(nullptr),
+      right(nullptr),
+      val(rhs)
+  {
+  }
+
+  template < class Key, class Value >
+  Node< Key, Value >::Node(value_pair &&rhs):
+      parent(nullptr),
+      left(nullptr),
+      right(nullptr),
+      val(std::move(rhs))
+  {
+  }
+
   template < class NodePtr > NodePtr nextNode(NodePtr node) noexcept
   {
     // TODO: get next node;

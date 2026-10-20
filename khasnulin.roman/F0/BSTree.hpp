@@ -70,19 +70,19 @@ namespace khasnulin
     const_iter cend() const noexcept;
 
     // получить значение по ключу
-    value_type &get(const Key &k);
-    const value_type &get(const Key &k) const;
+    mapped_type &get(const Key &k);
+    const mapped_type &get(const Key &k) const;
 
     // получить значение по ключу, если такого нет -- создать такой узел с пустым значением
-    value_type &operator[](const Key &k);
+    mapped_type &operator[](const Key &k);
 
     // найти элемент в дереве по ключу, вернуть итератор, если элемента нет, итератор в end
     iter find(const Key &k);
     const_iter find(const Key &k) const;
 
     // вставить элемент value в дереве по ключу.
-    void insert(const mapped_type &pair);
-    void insert(mapped_type &&pair);
+    void insert(const value_type &pair);
+    void insert(value_type &&pair);
 
     // удалить элемент с ключом k из дерева
     void erase(const Key &k);
@@ -248,14 +248,14 @@ namespace khasnulin
   }
 
   template < class Key, class Value, class Compare >
-  typename BSTree< Key, Value, Compare >::value_type &BSTree< Key, Value, Compare >::get(const Key &k)
+  typename BSTree< Key, Value, Compare >::mapped_type &BSTree< Key, Value, Compare >::get(const Key &k)
   {
     // TODO: add simple find method usage and return .second from pair;
     return fakeRoot_.val.second;
   }
 
   template < class Key, class Value, class Compare >
-  const typename BSTree< Key, Value, Compare >::value_type &
+  const typename BSTree< Key, Value, Compare >::mapped_type &
   BSTree< Key, Value, Compare >::get(const Key &k) const
   {
     // TODO: add simple find method usage and return .second from pair;
@@ -263,7 +263,7 @@ namespace khasnulin
   }
 
   template < class Key, class Value, class Compare >
-  typename BSTree< Key, Value, Compare >::value_type &BSTree< Key, Value, Compare >::operator[](const Key &k)
+  typename BSTree< Key, Value, Compare >::mapped_type &BSTree< Key, Value, Compare >::operator[](const Key &k)
   {
     // TODO: add simple find method usage, return second if we find it by key, if recieve nullptr then try to
     // insert new node with such key and empty value, return created value after insertion;
@@ -285,14 +285,14 @@ namespace khasnulin
   }
 
   template < class Key, class Value, class Compare >
-  void BSTree< Key, Value, Compare >::insert(const mapped_type &pair)
+  void BSTree< Key, Value, Compare >::insert(const value_type &pair)
   {
     // TODO: find a parent for new node by simple find method, create new node with that parent (copy semantic
     // constructuctor
   }
 
   template < class Key, class Value, class Compare >
-  void BSTree< Key, Value, Compare >::insert(mapped_type &&pair)
+  void BSTree< Key, Value, Compare >::insert(value_type &&pair)
   {
     // TODO: find a parent for new node by simple find method, create new node with that parent (move semantic
     // constructuctor)
