@@ -17,7 +17,34 @@ namespace khasnulin
 
     Node(const value_pair &rhs);
     Node(value_pair &&rhs);
+
+    Node(const Node &) = delete;
+    Node &operator=(const Node &) = delete;
   };
+
+  template < class NodePtr > NodePtr nextNode(NodePtr node) noexcept
+  {
+    // TODO: get next node;
+    return nullptr;
+  }
+
+  template < class NodePtr > NodePtr prevNode(NodePtr node) noexcept
+  {
+    // TODO: get prev node;
+    return nullptr;
+  }
+
+  template < class NodePtr > NodePtr minNode(NodePtr node) noexcept
+  {
+    // TODO: get most left node;
+    return nullptr;
+  }
+
+  template < class NodePtr > NodePtr maxNode(NodePtr node) noexcept
+  {
+    // TODO: get most right node;
+    return nullptr;
+  }
 }
 
 #endif

@@ -62,6 +62,85 @@ namespace khasnulin
     // текущий указатель на node в итераторе
     node_ptr node_;
   };
+
+  template < class Key, class Value, bool IsConst >
+  BSTreeIterator< Key, Value, IsConst >::BSTreeIterator() noexcept:
+      node_(nullptr)
+  {
+  }
+
+  template < class Key, class Value, bool IsConst >
+  BSTreeIterator< Key, Value, IsConst >::BSTreeIterator(
+      const BSTreeIterator< Key, Value, false > &rhs) noexcept:
+      node_(rhs.node_)
+  {
+  }
+
+  template < class Key, class Value, bool IsConst >
+  BSTreeIterator< Key, Value, IsConst >::BSTreeIterator(node_ptr node) noexcept:
+      node_(node)
+  {
+  }
+
+  template < class Key, class Value, bool IsConst >
+  BSTreeIterator< Key, Value, IsConst > &BSTreeIterator< Key, Value, IsConst >::operator++() noexcept
+  {
+    // TODO:: call nextNode for curr node method
+    return *this;
+  }
+
+  template < class Key, class Value, bool IsConst >
+  BSTreeIterator< Key, Value, IsConst > BSTreeIterator< Key, Value, IsConst >::operator++(int) noexcept
+  {
+    BSTreeIterator tmp = *this;
+    this->operator++();
+    return tmp;
+  }
+
+  template < class Key, class Value, bool IsConst >
+  BSTreeIterator< Key, Value, IsConst > &BSTreeIterator< Key, Value, IsConst >::operator--() noexcept
+  {
+    // TODO call prev node method for curr node
+    return *this;
+  }
+
+  template < class Key, class Value, bool IsConst >
+  BSTreeIterator< Key, Value, IsConst > BSTreeIterator< Key, Value, IsConst >::operator--(int) noexcept
+  {
+    BSTreeIterator tmp = *this;
+    this->operator--();
+    return tmp;
+  }
+
+  template < class Key, class Value, bool IsConst >
+  typename BSTreeIterator< Key, Value, IsConst >::reference
+  BSTreeIterator< Key, Value, IsConst >::operator*() const noexcept
+  {
+    return node_->val;
+  }
+
+  template < class Key, class Value, bool IsConst >
+  typename BSTreeIterator< Key, Value, IsConst >::pointer
+  BSTreeIterator< Key, Value, IsConst >::operator->() const noexcept
+  {
+    return &node_->val;
+  }
+
+  template < class Key, class Value, bool IsConst >
+  template < bool OtherConst >
+  bool BSTreeIterator< Key, Value, IsConst >::operator==(
+      const BSTreeIterator< Key, Value, OtherConst > &rhs) const noexcept
+  {
+    return node_ == rhs.node_;
+  }
+
+  template < class Key, class Value, bool IsConst >
+  template < bool OtherConst >
+  bool BSTreeIterator< Key, Value, IsConst >::operator!=(
+      const BSTreeIterator< Key, Value, OtherConst > &rhs) const noexcept
+  {
+    return !(*this == rhs);
+  }
 }
 
 #endif
