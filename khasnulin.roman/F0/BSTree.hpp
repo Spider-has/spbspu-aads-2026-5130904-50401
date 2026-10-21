@@ -51,6 +51,7 @@ namespace khasnulin
     BSTree(BSTree &&rhs) noexcept;
 
     BSTree &operator=(const BSTree &rhs);
+    // после move перемещённый объект пуст.
     BSTree &operator=(BSTree &&rhs) noexcept;
 
     ~BSTree() noexcept;
@@ -60,7 +61,7 @@ namespace khasnulin
 
     // Возвращает высоту самого длинного пути от корня в дереве
     size_type height() const;
-    // Возвращает высоту самого длинного пути от текущего элемента в корне.
+    // высота поддерева с корнем в it; 0 для end(); пустое дерево — 0, один узел — 1
     size_type height(const_iter it) const;
 
     // итераторы начала обхода дерева
@@ -99,13 +100,15 @@ namespace khasnulin
     // swap для ADL
     void swap(BSTree &rhs) noexcept;
 
-    // 4 метода поворотов для будущей обретки других деревьев.
+    // 4 метода поворотов для будущей обретки других деревьев. аргумент — опускающийся узел; возвращается
+    // новый корень поддерева; если нужного ребёнка нет, бросается std::logic_error, дерево не меняется
     iter rotateLeft(const_iter it);
     iter rotateRight(const_iter it);
     iter rotateLargeLeft(const_iter it);
     iter rotateLargeRight(const_iter it);
 
     // методы обхода разными способами с применением функционального объекта f
+    // может бросить при выделении памяти или из f; дерево не меняется
     template < class F > F traverseLNR(F f) const;
     template < class F > F traverseRNL(F f) const;
     template < class F > F traverseBreadth(F f) const;
@@ -122,7 +125,7 @@ namespace khasnulin
     template < class P > iter insertImpl(P &&pair);
     void addNewNodeToTree(Node< Key, Value > *node, Node< Key, Value > *parent, bool isLeft) noexcept;
 
-    Node< Key, Value > *unlinkAndDeleteNode(Node< Key, Value > *node) noexcept;
+    void unlinkAndDeleteNode(Node< Key, Value > *node) noexcept;
 
     size_type size_;
 
@@ -132,7 +135,7 @@ namespace khasnulin
   };
 
   template < class Key, class Value, class Compare >
-  Node< Key, Value > *BSTree< Key, Value, Compare >::unlinkAndDeleteNode(Node< Key, Value > *node) noexcept
+  void BSTree< Key, Value, Compare >::unlinkAndDeleteNode(Node< Key, Value > *node) noexcept
   {
     assert(node != nullptr && node != &fakeRoot_);
     Node< Key, Value > *parent = node->parent;
@@ -169,7 +172,6 @@ namespace khasnulin
     }
     delete oldNode;
     --size_;
-    return newNode;
   }
 
   template < class Key, class Value, class Compare >
