@@ -3,6 +3,7 @@
 
 #include "BSNode.hpp"
 #include "BSTreeIter.hpp"
+#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -32,7 +33,7 @@ namespace khasnulin
   public:
     using key_type = Key;
     using mapped_type = Value;
-    using size_type = size_t;
+    using size_type = std::size_t;
 
     using value_type = std::pair< const Key, Value >;
 
@@ -286,6 +287,7 @@ namespace khasnulin
     {
       return *this;
     }
+    clear();
     swap(rhs);
     return *this;
   }
@@ -658,7 +660,7 @@ namespace khasnulin
   }
 
   template < class Key, class Value, class Compare >
-  void swap(const BSTree< Key, Value, Compare > &lhs, const BSTree< Key, Value, Compare > &rhs) noexcept
+  void swap(BSTree< Key, Value, Compare > &lhs, BSTree< Key, Value, Compare > &rhs) noexcept
   {
     lhs.swap(rhs);
   }
