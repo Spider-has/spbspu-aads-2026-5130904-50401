@@ -331,13 +331,21 @@ namespace khasnulin
   template < class Key, class Value, class Hasher, class Equal >
   Value *HashTable< Key, Value, Hasher, Equal >::find(const Key &key)
   {
-    return nullptr;
+    return const_cast< Value * >(static_cast< const HashTable * >(this)->find(key));
   }
 
   template < class Key, class Value, class Hasher, class Equal >
   const Value *HashTable< Key, Value, Hasher, Equal >::find(const Key &key) const
   {
-    return nullptr;
+    size_t bucket_i = (hasher_(key) % buckets_.getSize());
+    const Bucket &currBucket = buckets_[bucket_i];
+    const value_type *existedValue = findInBucketOrOverflow(currBucket, key);
+    const Value *result = nullptr;
+    if (existedValue)
+    {
+      result = &(existedValue->second);
+    }
+    return result;
   }
 
   // Метод drop
