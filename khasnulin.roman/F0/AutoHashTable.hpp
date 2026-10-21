@@ -87,6 +87,7 @@ namespace khasnulin
   void AutoHashTable< Key, Value, Hash, Equal >::grow()
   {
     size_type currBucketsCount = bucketSize();
+    // нет проверки на overflow осознанно, не рассчитываю на большой Max Grow Attempts
     size_type multiplier = 2;
     bool caught = true;
     for (size_type i = 0; i < MAX_GROW_ATTEMPTS && caught; ++i)
