@@ -602,15 +602,33 @@ namespace khasnulin
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::rotateLeft(const_iter it)
   {
-    // Add tree left rotation, return new node in place of old node;
-    return iter(&fakeRoot_);
+    if (!it.node_ || !it.node_->parent || !it.node_->right)
+    {
+      throw std::logic_error("can't get rotate, some nodes doesn't exists");
+    }
+    Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
+    Node< Key, Value > *parent = oldRoot->parent;
+    Node< Key, Value > *newRoot = oldRoot->right;
+    replaceChild(parent, oldRoot, newRoot);
+    setRight(oldRoot, newRoot->left);
+    setLeft(newRoot, oldRoot);
+    return iter(newRoot);
   }
 
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::rotateRight(const_iter it)
   {
-    // Add tree right rotation, return new node in place of old node;
-    return iter(&fakeRoot_);
+    if (!it.node_ || !it.node_->parent || !it.node_->left)
+    {
+      throw std::logic_error("can't get rotate, some nodes doesn't exists");
+    }
+    Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
+    Node< Key, Value > *parent = oldRoot->parent;
+    Node< Key, Value > *newRoot = oldRoot->left;
+    replaceChild(parent, oldRoot, newRoot);
+    setLeft(oldRoot, newRoot->right);
+    setRight(newRoot, oldRoot);
+    return iter(newRoot);
   }
 
   template < class Key, class Value, class Compare >

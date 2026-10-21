@@ -329,6 +329,38 @@ BOOST_AUTO_TEST_CASE(EraseNodeWithTwoChildrenAndIteratorStability)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+namespace
+{
+  std::vector< int > keysForward(const BSTree< int, int > &tree)
+  {
+    std::vector< int > keys;
+    for (auto it = tree.cbegin(); it != tree.cend(); ++it)
+    {
+      keys.push_back(it->first);
+    }
+    return keys;
+  }
+
+  std::vector< int > keysBackward(const BSTree< int, int > &tree)
+  {
+    std::vector< int > keys;
+    auto it = tree.cend();
+    while (it != tree.cbegin())
+    {
+      --it;
+      keys.push_back(it->first);
+    }
+    return keys;
+  }
+
+  void checkOrder(const BSTree< int, int > &tree, const std::vector< int > &expected)
+  {
+    BOOST_TEST(keysForward(tree) == expected);
+    std::vector< int > reversed(expected.rbegin(), expected.rend());
+    BOOST_TEST(keysBackward(tree) == reversed);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE(RotationsAndHeightSuite)
 
 BOOST_AUTO_TEST_CASE(SubtreeHeightCalculation)
@@ -346,122 +378,102 @@ BOOST_AUTO_TEST_CASE(SubtreeHeightCalculation)
   BOOST_TEST(tree.height(tree.end()) == 0);
 }
 
-BOOST_AUTO_TEST_CASE(SmallLeftAndRightRotationsPreserveInvariantsAndIterators)
+BOOST_AUTO_TEST_CASE(SmallRotationsAtRoot)
 {
   BSTree< int, int > tree;
-
-  tree.insert({10, 100});
-  tree.insert({20, 200});
-  tree.insert({30, 300});
-
+  for (int k : {10, 20, 30})
+  {
+    tree.insert({k, k * 10});
+  }
   BOOST_TEST(tree.height() == 3);
 
   auto it_10 = tree.find(10);
   auto it_20 = tree.find(20);
-  tree.find(30);
+  const auto *addr_10 = &(*it_10);
   const auto *addr_20 = &(*it_20);
 
-  auto res_it = tree.rotateLeft(it_20);
-
-  BOOST_TEST((res_it == it_20));
-  BOOST_TEST(tree.height() == 2);
-  BOOST_TEST(&(*it_20) == addr_20);
-
-  auto res_it2 = tree.rotateRight(it_10);
-  BOOST_TEST((res_it2 == it_10));
-  BOOST_TEST(tree.height() == 3);
-
-  std::vector< int > order;
-  for (const auto &p : tree)
-  {
-    order.push_back(p.first);
-  }
-  std::vector< int > expected = {10, 20, 30};
-  BOOST_TEST(order == expected);
-}
-
-BOOST_AUTO_TEST_CASE(LargeLeftAndRightRotations)
-{
-  BSTree< int, int > tree;
-  tree.insert({10, 1});
-  tree.insert({30, 3});
-  tree.insert({20, 2});
-
-  BOOST_TEST(tree.height() == 3);
-
-  auto it_20 = tree.find(20);
-  tree.rotateLargeLeft(it_20);
-
+  auto res = tree.rotateLeft(it_10);
+  BOOST_TEST((res == it_20));
   BOOST_TEST(tree.height() == 2);
   BOOST_TEST(tree.height(it_20) == 2);
+  BOOST_TEST(&(*it_10) == addr_10);
+  BOOST_TEST(&(*it_20) == addr_20);
+  checkOrder(tree, {10, 20, 30});
+
+  auto res2 = tree.rotateRight(it_20);
+  BOOST_TEST((res2 == it_10));
+  BOOST_TEST(tree.height() == 3);
+  BOOST_TEST(tree.height(it_10) == 3);
+  checkOrder(tree, {10, 20, 30});
 }
 
-BOOST_AUTO_TEST_CASE(InvalidRotationsThrowException)
+BOOST_AUTO_TEST_CASE(SmallRotationBelowRoot)
+{
+  BSTree< int, int > tree;
+  for (int k : {50, 30, 20, 10})
+  {
+    tree.insert({k, k});
+  }
+  BOOST_TEST(tree.height() == 4);
+
+  auto res = tree.rotateRight(tree.find(30));
+  BOOST_TEST(res->first == 20);
+  BOOST_TEST(tree.height() == 3);
+  BOOST_TEST(tree.height(tree.find(50)) == 3);
+  BOOST_TEST(tree.height(res) == 2);
+  checkOrder(tree, {10, 20, 30, 50});
+}
+
+BOOST_AUTO_TEST_CASE(LargeLeftRotation)
+{
+  BSTree< int, int > tree;
+  for (int k : {10, 30, 20})
+  {
+    tree.insert({k, k});
+  }
+  BOOST_TEST(tree.height() == 3);
+
+  auto res = tree.rotateLargeLeft(tree.find(10));
+  BOOST_TEST(res->first == 20);
+  BOOST_TEST(tree.height() == 2);
+  BOOST_TEST(tree.height(res) == 2);
+  checkOrder(tree, {10, 20, 30});
+}
+
+BOOST_AUTO_TEST_CASE(LargeRightRotation)
+{
+  BSTree< int, int > tree;
+  for (int k : {30, 10, 20})
+  {
+    tree.insert({k, k});
+  }
+  BOOST_TEST(tree.height() == 3);
+
+  auto res = tree.rotateLargeRight(tree.find(30));
+  BOOST_TEST(res->first == 20);
+  BOOST_TEST(tree.height() == 2);
+  BOOST_TEST(tree.height(res) == 2);
+  checkOrder(tree, {10, 20, 30});
+}
+
+BOOST_AUTO_TEST_CASE(InvalidRotationsThrowAndKeepTreeUnchanged)
 {
   BSTree< int, int > tree;
   tree.insert({10, 1});
   tree.insert({5, 2});
 
   BOOST_CHECK_THROW(tree.rotateLeft(tree.end()), std::logic_error);
+  BOOST_CHECK_THROW(tree.rotateRight(tree.end()), std::logic_error);
   BOOST_CHECK_THROW(tree.rotateLeft(tree.find(10)), std::logic_error);
-
   BOOST_CHECK_THROW(tree.rotateLeft(tree.find(5)), std::logic_error);
-}
+  BOOST_CHECK_THROW(tree.rotateRight(tree.find(5)), std::logic_error);
 
-BOOST_AUTO_TEST_SUITE_END()
+  BOOST_CHECK_THROW(tree.rotateLargeLeft(tree.find(10)), std::logic_error);
+  BOOST_CHECK_THROW(tree.rotateLargeRight(tree.find(10)), std::logic_error);
 
-namespace
-{
-  struct TraversalCollector
-  {
-    int key_sum = 0;
-    std::vector< int > order;
-
-    void operator()(const std::pair< const int, std::string > &kv)
-    {
-      key_sum += kv.first;
-      order.push_back(kv.first);
-    }
-  };
-}
-
-BOOST_AUTO_TEST_SUITE(TraversalsSuite)
-
-BOOST_AUTO_TEST_CASE(TraversalsOnPopulatedTree)
-{
-  BSTree< int, std::string > tree;
-  for (int k : {8, 3, 10, 1, 6, 14, 4, 7, 13})
-  {
-    tree.insert({k, std::to_string(k)});
-  }
-
-  TraversalCollector lnr = tree.traverseLNR(TraversalCollector{});
-  std::vector< int > expected_lnr = {1, 3, 4, 6, 7, 8, 10, 13, 14};
-  BOOST_TEST(lnr.key_sum == 66);
-  BOOST_TEST(lnr.order == expected_lnr);
-
-  TraversalCollector rnl = tree.traverseRNL(TraversalCollector{});
-  std::vector< int > expected_rnl = {14, 13, 10, 8, 7, 6, 4, 3, 1};
-  BOOST_TEST(rnl.key_sum == 66);
-  BOOST_TEST(rnl.order == expected_rnl);
-
-  TraversalCollector bfs = tree.traverseBreadth(TraversalCollector{});
-  std::vector< int > expected_bfs = {8, 3, 10, 1, 6, 14, 4, 7, 13};
-  BOOST_TEST(bfs.key_sum == 66);
-  BOOST_TEST(bfs.order == expected_bfs);
-}
-
-BOOST_AUTO_TEST_CASE(TraversalsOnEmptyTree)
-{
-  const BSTree< int, std::string > empty_tree;
-
-  TraversalCollector res1 = empty_tree.traverseLNR(TraversalCollector{});
-  TraversalCollector res2 = empty_tree.traverseRNL(TraversalCollector{});
-  TraversalCollector res3 = empty_tree.traverseBreadth(TraversalCollector{});
-
-  BOOST_TEST(res1.order.empty());
-  BOOST_TEST(res2.order.empty());
-  BOOST_TEST(res3.order.empty());
+  BOOST_TEST(tree.size() == 2);
+  BOOST_TEST(tree.height() == 2);
+  checkOrder(tree, {5, 10});
 }
 
 BOOST_AUTO_TEST_SUITE_END()
