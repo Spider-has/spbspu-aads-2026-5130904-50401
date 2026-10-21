@@ -369,7 +369,7 @@ BOOST_AUTO_TEST_CASE(test_find_in_overflow)
 {
   struct DummyHash
   {
-    size_t operator()(int) const
+    size_t operator()(int a) const
     {
       return 0;
     }

@@ -2,6 +2,8 @@
 #define AUTO_HASH_TABLE_HPP
 
 #include "HashTable.hpp"
+#include <stdexcept>
+#include <utility>
 
 namespace khasnulin
 {
@@ -59,10 +61,11 @@ namespace khasnulin
     const_iterator cbegin() const noexcept;
     const_iterator cend() const noexcept;
 
-    void clear() noexcept;
+    void clear();
 
   private:
     static constexpr size_type MAX_GROW_ATTEMPTS = 8;
+    bool needGrow() const noexcept;
     void grow();
 
     HashTable< Key, Value, Hash, Equal > hashTable_;
@@ -73,46 +76,102 @@ namespace khasnulin
       hashTable_(initial_buckets)
   {
   }
+
+  template < class Key, class Value, class Hash, class Equal >
+  bool AutoHashTable< Key, Value, Hash, Equal >::needGrow() const noexcept
+  {
+    return hashTable_.average_bucket_size() >= 3.0;
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  void AutoHashTable< Key, Value, Hash, Equal >::grow()
+  {
+    size_type currBucketsCount = bucketSize();
+    size_type multiplier = 2;
+    bool caught = true;
+    for (size_type i = 0; i < MAX_GROW_ATTEMPTS && caught; ++i)
+    {
+      try
+      {
+        hashTable_.rehash(currBucketsCount * multiplier);
+        caught = false;
+      }
+      catch (const std::overflow_error &)
+      {
+        caught = true;
+        multiplier *= 2;
+      }
+    }
+    if (caught)
+    {
+      throw std::overflow_error("auto hash table can't grow after all grow attempts");
+    }
+  }
+
   template < class Key, class Value, class Hash, class Equal >
   template < class V >
   void AutoHashTable< Key, Value, Hash, Equal >::add(const Key &key, V &&value)
   {
-    // TODO call insert
+    try
+    {
+      if (find(key) == nullptr && needGrow())
+      {
+        grow();
+      }
+    }
+    catch (const std::overflow_error &)
+    {
+    }
+    try
+    {
+      hashTable_.add(key, std::forward< V >(value));
+    }
+    catch (const std::overflow_error &)
+    {
+      grow();
+      hashTable_.add(key, std::forward< V >(value));
+    }
   }
 
   template < class Key, class Value, class Hash, class Equal >
   Value &AutoHashTable< Key, Value, Hash, Equal >::operator[](const Key &key)
   {
-    // TODO:: add impl
-    return hashTable_[key];
+    Value *result = find(key);
+    if (result)
+    {
+      return *result;
+    }
+    add(key, Value{});
+    return *find(key);
   }
 
   template < class Key, class Value, class Hash, class Equal >
   Value *AutoHashTable< Key, Value, Hash, Equal >::find(const Key &key)
   {
-    // TODO :: add impl
-    return nullptr;
+    return hashTable_.find(key);
   }
 
   template < class Key, class Value, class Hash, class Equal >
   const Value *AutoHashTable< Key, Value, Hash, Equal >::find(const Key &key) const
   {
-    // TODO: Add impl
-    return nullptr;
+    return hashTable_.find(key);
   }
 
   template < class Key, class Value, class Hash, class Equal >
   bool AutoHashTable< Key, Value, Hash, Equal >::has(const Key &key) const
   {
-    // TODO: add impl;
-    return false;
+    return hashTable_.has(key);
   }
 
   template < class Key, class Value, class Hash, class Equal >
   bool AutoHashTable< Key, Value, Hash, Equal >::erase(const Key &key)
   {
-    // TODO: add impl;
-    return false;
+    if (find(key) == nullptr)
+    {
+      return false;
+    }
+    hashTable_.drop(key);
+    return true;
   }
 
   template < class Key, class Value, class Hash, class Equal >
@@ -178,8 +237,9 @@ namespace khasnulin
   }
 
   template < class Key, class Value, class Hash, class Equal >
-  void AutoHashTable< Key, Value, Hash, Equal >::clear() noexcept
+  void AutoHashTable< Key, Value, Hash, Equal >::clear()
   {
+    hashTable_ = HashTable< Key, Value, Hash, Equal >(hashTable_.bucket_size());
   }
 }
 
