@@ -36,11 +36,6 @@ namespace
     }
   };
 
-  std::ostream &operator<<(std::ostream &out, const AutoPerson &rhs)
-  {
-    return out << rhs.age << ", " << rhs.name << "; ";
-  }
-
   struct ConstantHash
   {
     size_t operator()(int a) const
@@ -566,8 +561,9 @@ BOOST_AUTO_TEST_CASE(test_move_assignment)
 
 BOOST_AUTO_TEST_CASE(test_move_operations_noexcept)
 {
-  BOOST_CHECK(std::is_nothrow_move_constructible< AutoHashTable< int, std::string > >::value);
-  BOOST_CHECK(std::is_nothrow_move_assignable< AutoHashTable< int, std::string > >::value);
+  using Table = AutoHashTable< int, std::string >;
+  BOOST_CHECK(std::is_nothrow_move_constructible< Table >::value);
+  BOOST_CHECK(std::is_nothrow_move_assignable< Table >::value);
 }
 
 BOOST_AUTO_TEST_CASE(test_stress_against_unordered_map)

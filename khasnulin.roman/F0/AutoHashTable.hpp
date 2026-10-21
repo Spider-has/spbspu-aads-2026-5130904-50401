@@ -177,7 +177,10 @@ namespace khasnulin
     return hashTable_.cend();
   }
 
-  void clear() noexcept;
+  template < class Key, class Value, class Hash, class Equal >
+  void AutoHashTable< Key, Value, Hash, Equal >::clear() noexcept
+  {
+  }
 }
 
 #endif
