@@ -67,6 +67,117 @@ namespace khasnulin
 
     HashTable< Key, Value, Hash, Equal > hashTable_;
   };
+
+  template < class Key, class Value, class Hash, class Equal >
+  AutoHashTable< Key, Value, Hash, Equal >::AutoHashTable(size_type initial_buckets):
+      hashTable_(initial_buckets)
+  {
+  }
+  template < class Key, class Value, class Hash, class Equal >
+  template < class V >
+  void AutoHashTable< Key, Value, Hash, Equal >::add(const Key &key, V &&value)
+  {
+    // TODO call insert
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  Value &AutoHashTable< Key, Value, Hash, Equal >::operator[](const Key &key)
+  {
+    // TODO:: add impl
+    return hashTable_[key];
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  Value *AutoHashTable< Key, Value, Hash, Equal >::find(const Key &key)
+  {
+    // TODO :: add impl
+    return nullptr;
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  const Value *AutoHashTable< Key, Value, Hash, Equal >::find(const Key &key) const
+  {
+    // TODO: Add impl
+    return nullptr;
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  bool AutoHashTable< Key, Value, Hash, Equal >::has(const Key &key) const
+  {
+    // TODO: add impl;
+    return false;
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  bool AutoHashTable< Key, Value, Hash, Equal >::erase(const Key &key)
+  {
+    // TODO: add impl;
+    return false;
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  typename AutoHashTable< Key, Value, Hash, Equal >::size_type
+  AutoHashTable< Key, Value, Hash, Equal >::size() const noexcept
+  {
+    return hashTable_.size();
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  bool AutoHashTable< Key, Value, Hash, Equal >::empty() const noexcept
+  {
+    return hashTable_.empty();
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  typename AutoHashTable< Key, Value, Hash, Equal >::size_type
+  AutoHashTable< Key, Value, Hash, Equal >::bucketSize() const noexcept
+  {
+    return hashTable_.bucket_size();
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  typename AutoHashTable< Key, Value, Hash, Equal >::iterator
+  AutoHashTable< Key, Value, Hash, Equal >::begin() noexcept
+  {
+    return hashTable_.begin();
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  typename AutoHashTable< Key, Value, Hash, Equal >::iterator
+  AutoHashTable< Key, Value, Hash, Equal >::end() noexcept
+  {
+    return hashTable_.end();
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  typename AutoHashTable< Key, Value, Hash, Equal >::const_iterator
+  AutoHashTable< Key, Value, Hash, Equal >::begin() const noexcept
+  {
+    return hashTable_.cbegin();
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  typename AutoHashTable< Key, Value, Hash, Equal >::const_iterator
+  AutoHashTable< Key, Value, Hash, Equal >::end() const noexcept
+  {
+    return hashTable_.cend();
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  typename AutoHashTable< Key, Value, Hash, Equal >::const_iterator
+  AutoHashTable< Key, Value, Hash, Equal >::cbegin() const noexcept
+  {
+    return hashTable_.cbegin();
+  }
+
+  template < class Key, class Value, class Hash, class Equal >
+  typename AutoHashTable< Key, Value, Hash, Equal >::const_iterator
+  AutoHashTable< Key, Value, Hash, Equal >::cend() const noexcept
+  {
+    return hashTable_.cend();
+  }
+
+  void clear() noexcept;
 }
 
 #endif
