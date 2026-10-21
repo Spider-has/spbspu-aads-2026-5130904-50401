@@ -3,7 +3,6 @@
 
 #include "BSNode.hpp"
 #include "BSTreeIter.hpp"
-#include <boost/type.hpp>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -88,7 +87,7 @@ namespace khasnulin
     iter insert(value_type &&pair);
 
     // удалить элемент с ключом k из дерева
-    size_t erase(const Key &k);
+    size_type erase(const Key &k);
     // удалить элемент по итератору. вернуть итератор на следующий элемент
     iter erase(const_iter it);
 
@@ -121,7 +120,7 @@ namespace khasnulin
     template < class P > iter insertImpl(P &&pair);
     void addNewNodeToTree(Node< Key, Value > *node, Node< Key, Value > *parent, bool isLeft) noexcept;
 
-    Node< Key, Value > *removeNodeWithRotation(Node< Key, Value > *node) noexcept;
+    Node< Key, Value > *unlinkAndDeleteNode(Node< Key, Value > *node) noexcept;
 
     size_type size_;
 
@@ -131,7 +130,7 @@ namespace khasnulin
   };
 
   template < class Key, class Value, class Compare >
-  Node< Key, Value > *BSTree< Key, Value, Compare >::removeNodeWithRotation(Node< Key, Value > *node) noexcept
+  Node< Key, Value > *BSTree< Key, Value, Compare >::unlinkAndDeleteNode(Node< Key, Value > *node) noexcept
   {
     assert(node != nullptr && node != &fakeRoot_);
     Node< Key, Value > *parent = node->parent;
@@ -311,7 +310,7 @@ namespace khasnulin
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::size_type BSTree< Key, Value, Compare >::height() const
   {
-    if (size() == 0)
+    if (empty())
     {
       return 0;
     }
@@ -332,7 +331,7 @@ namespace khasnulin
     size_type maxHeight = 0;
     const Node< Key, Value > *curr = it.node_;
     size_type currHeight = 1;
-    while (currHeight >= 1)
+    while (true)
     {
       if (curr->left)
       {
@@ -347,14 +346,14 @@ namespace khasnulin
       else
       {
         maxHeight = maxHeight < currHeight ? currHeight : maxHeight;
-        int isFoundNextRight = false;
+        bool isFoundNextRight = false;
         while (!isFoundNextRight)
         {
           if (curr == it.node_)
           {
             return maxHeight;
           }
-          Node< Key, Value > *parent = curr->parent;
+          const Node< Key, Value > *parent = curr->parent;
           bool isLeft = (parent->left == curr);
           curr = parent;
           --currHeight;
@@ -536,7 +535,7 @@ namespace khasnulin
     {
       return 0;
     }
-    removeNodeWithRotation(result.node);
+    unlinkAndDeleteNode(result.node);
     return 1;
   }
 
@@ -547,7 +546,9 @@ namespace khasnulin
     {
       return end();
     }
-    return iter(removeNodeWithRotation(const_cast< Node< Key, Value > * >(it.node_)));
+    Node< Key, Value > *next = nextNode(const_cast< Node< Key, Value > * >(it.node_));
+    unlinkAndDeleteNode(const_cast< Node< Key, Value > * >(it.node_));
+    return iter(next);
   }
 
   template < class Key, class Value, class Compare > void BSTree< Key, Value, Compare >::clear() noexcept
@@ -566,7 +567,7 @@ namespace khasnulin
       else
       {
         Node< Key, Value > *parent = curr->parent;
-        removeNodeWithRotation(curr);
+        unlinkAndDeleteNode(curr);
         curr = parent;
       }
     }
@@ -638,17 +639,13 @@ namespace khasnulin
   template < class F >
   F BSTree< Key, Value, Compare >::traverseRNL(F f) const
   {
-    if (begin() == end())
-    {
-      return f;
-    }
     const_iter it = end();
-    const_iter b = begin();
-    do
+    const_iter beg = begin();
+    while (it != beg)
     {
       --it;
       f(*it);
-    } while (it != b);
+    }
     return f;
   }
 
@@ -658,6 +655,12 @@ namespace khasnulin
   {
     // TODO:: add BFS traverse with F func. It can be just with iters
     return f;
+  }
+
+  template < class Key, class Value, class Compare >
+  void swap(const BSTree< Key, Value, Compare > &lhs, const BSTree< Key, Value, Compare > &rhs) noexcept
+  {
+    lhs.swap(rhs);
   }
 }
 
