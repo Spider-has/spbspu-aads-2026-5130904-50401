@@ -604,7 +604,7 @@ namespace khasnulin
   {
     if (!it.node_ || !it.node_->parent || !it.node_->right)
     {
-      throw std::logic_error("can't get rotate, some nodes doesn't exists");
+      throw std::logic_error("rotate left: can't make rotate, some nodes doesn't exists");
     }
     Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
     Node< Key, Value > *parent = oldRoot->parent;
@@ -620,7 +620,7 @@ namespace khasnulin
   {
     if (!it.node_ || !it.node_->parent || !it.node_->left)
     {
-      throw std::logic_error("can't get rotate, some nodes doesn't exists");
+      throw std::logic_error("rotate right: can't make rotate, some nodes doesn't exists");
     }
     Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
     Node< Key, Value > *parent = oldRoot->parent;
@@ -634,15 +634,39 @@ namespace khasnulin
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::rotateLargeLeft(const_iter it)
   {
-    // Add tree large left rotation, return new node in place of old node;
-    return iter(&fakeRoot_);
+    if (!it.node_ || !it.node_->parent || !it.node_->right || !it.node_->right->left)
+    {
+      throw std::logic_error("large left rotate: can't make rotate, some nodes doesn't exists");
+    }
+    Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
+    Node< Key, Value > *parent = oldRoot->parent;
+    Node< Key, Value > *rightChild = oldRoot->right;
+    Node< Key, Value > *newRoot = rightChild->left;
+    replaceChild(parent, oldRoot, newRoot);
+    setRight(oldRoot, newRoot->left);
+    setLeft(rightChild, newRoot->right);
+    setLeft(newRoot, oldRoot);
+    setRight(newRoot, rightChild);
+    return iter(newRoot);
   }
 
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::rotateLargeRight(const_iter it)
   {
-    // Add tree large right rotation, return new node in place of old node;
-    return iter(&fakeRoot_);
+    if (!it.node_ || !it.node_->parent || !it.node_->left || !it.node_->left->right)
+    {
+      throw std::logic_error("large right rotate: can't make rotate, some nodes doesn't exists");
+    }
+    Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
+    Node< Key, Value > *parent = oldRoot->parent;
+    Node< Key, Value > *leftChild = oldRoot->left;
+    Node< Key, Value > *newRoot = leftChild->right;
+    replaceChild(parent, oldRoot, newRoot);
+    setLeft(oldRoot, newRoot->right);
+    setRight(leftChild, newRoot->left);
+    setLeft(newRoot, leftChild);
+    setRight(newRoot, oldRoot);
+    return iter(newRoot);
   }
 
   template < class Key, class Value, class Compare >
