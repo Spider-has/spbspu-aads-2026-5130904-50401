@@ -3,7 +3,6 @@
 
 #include "AutoHashTable.hpp"
 #include "BSTree.hpp"
-#include <memory>
 
 namespace khasnulin
 {
@@ -132,23 +131,105 @@ namespace khasnulin
     return true;
   }
 
-  bool hasRating(const UserKey &user, const ArticleKey &article) const;
-  const Weight *findRating(const UserKey &user, const ArticleKey &article) const;
+  template < class UserKey, class ArticleKey, class Weight >
+  bool Graph< UserKey, ArticleKey, Weight >::hasRating(const UserKey &user, const ArticleKey &article) const
+  {
+    return findRating(user, article) != nullptr;
+  }
 
-  size_type userRatingsCount(const UserKey &user) const;
-  size_type articleRatingsCount(const ArticleKey &article) const;
+  template < class UserKey, class ArticleKey, class Weight >
+  const Weight *Graph< UserKey, ArticleKey, Weight >::findRating(const UserKey &user,
+                                                                 const ArticleKey &article) const
+  {
+    const UserTree *userTree = byUser_.find(user);
+    if (userTree)
+    {
+      auto userIt = userTree->find(article);
+      if (userIt != userTree->end())
+      {
+        return &userIt->second;
+      }
+    }
+    return nullptr;
+  }
 
-  size_type ratingsCount() const noexcept;
-  bool empty() const noexcept;
+  template < class UserKey, class ArticleKey, class Weight >
+  typename Graph< UserKey, ArticleKey, Weight >::size_type
+  Graph< UserKey, ArticleKey, Weight >::userRatingsCount(const UserKey &user) const
+  {
+    const UserTree *userTree = byUser_.find(user);
+    if (userTree)
+    {
+      return userTree->size();
+    }
+    return 0;
+  }
 
-  bool eraseRating(const UserKey &user, const ArticleKey &article);
-  size_type eraseUser(const UserKey &user);
-  size_type eraseArticle(const ArticleKey &article);
+  template < class UserKey, class ArticleKey, class Weight >
+  typename Graph< UserKey, ArticleKey, Weight >::size_type
+  Graph< UserKey, ArticleKey, Weight >::articleRatingsCount(const ArticleKey &article) const
+  {
+    const ArticleTree *articleTree = byArticle_.find(article);
+    if (articleTree)
+    {
+      return articleTree->size();
+    }
+    return 0;
+  }
 
-  template < class F > F traverseUserRatings(const UserKey &user, F f) const;
-  template < class F > F traverseArticleRatings(const ArticleKey &article, F f) const;
-  template < class F > F traverseAllRatings(F f) const;
+  template < class UserKey, class ArticleKey, class Weight >
+  typename Graph< UserKey, ArticleKey, Weight >::size_type
+  Graph< UserKey, ArticleKey, Weight >::ratingsCount() const noexcept
+  {
+    return edges_;
+  }
 
+  template < class UserKey, class ArticleKey, class Weight >
+  bool Graph< UserKey, ArticleKey, Weight >::empty() const noexcept
+  {
+    return edges_ == 0;
+  }
+
+  template < class UserKey, class ArticleKey, class Weight >
+  bool Graph< UserKey, ArticleKey, Weight >::eraseRating(const UserKey &user, const ArticleKey &article)
+  {
+    return false;
+  }
+
+  template < class UserKey, class ArticleKey, class Weight >
+  typename Graph< UserKey, ArticleKey, Weight >::size_type
+  Graph< UserKey, ArticleKey, Weight >::eraseUser(const UserKey &user)
+  {
+    return 0;
+  }
+
+  template < class UserKey, class ArticleKey, class Weight >
+  typename Graph< UserKey, ArticleKey, Weight >::size_type
+  Graph< UserKey, ArticleKey, Weight >::eraseArticle(const ArticleKey &article)
+  {
+    return 0;
+  }
+
+  template < class UserKey, class ArticleKey, class Weight >
+  template < class F >
+  F Graph< UserKey, ArticleKey, Weight >::traverseUserRatings(const UserKey &user, F f) const
+  {
+    return f;
+  }
+
+  template < class UserKey, class ArticleKey, class Weight >
+  template < class F >
+  F Graph< UserKey, ArticleKey, Weight >::traverseArticleRatings(const ArticleKey &article, F f) const
+  {
+    return f;
+  }
+
+  template < class UserKey, class ArticleKey, class Weight >
+  template < class F >
+  F Graph< UserKey, ArticleKey, Weight >::traverseAllRatings(F f) const
+  {
+    return f;
+  }
 }
 
 #endif
