@@ -31,8 +31,20 @@ namespace khasnulin
     size_type eraseUser(const UserKey &user);
     size_type eraseArticle(const ArticleKey &article);
 
+    // Все оценки пользователя user.
+    // Ожидает: void f(const ArticleKey &article, const Weight &rating)
+    // Порядок: по возрастанию article (std::less< ArticleKey >).
     template < class F > F traverseUserRatings(const UserKey &user, F f) const;
+
+    // Все оценки статьи article.
+    // Ожидает: void f(const UserKey &user, const Weight &rating)
+    // Порядок: по возрастанию user (std::less< UserKey >).
     template < class F > F traverseArticleRatings(const ArticleKey &article, F f) const;
+
+    // Все оценки графа, каждая ровно один раз.
+    // Ожидает: void f(const UserKey &user, const ArticleKey &article, const Weight &rating)
+    // Порядок: пользователи -- в порядке хэш-таблицы (не определён),
+    //          статьи внутри пользователя -- по возрастанию article.
     template < class F > F traverseAllRatings(F f) const;
 
   private:
@@ -193,6 +205,26 @@ namespace khasnulin
   template < class UserKey, class ArticleKey, class Weight >
   bool Graph< UserKey, ArticleKey, Weight >::eraseRating(const UserKey &user, const ArticleKey &article)
   {
+    UserTree *userTree = byUser_.find(user);
+    ArticleTree *articleTree = byArticle_.find(article);
+    if (userTree && articleTree)
+    {
+      if (userTree->erase(article) == 0)
+      {
+        return false;
+      }
+      articleTree->erase(user);
+      if (userTree->empty())
+      {
+        byUser_.erase(user);
+      }
+      if (articleTree->empty())
+      {
+        byArticle_.erase(article);
+      }
+      --edges_;
+      return true;
+    }
     return false;
   }
 
@@ -200,20 +232,68 @@ namespace khasnulin
   typename Graph< UserKey, ArticleKey, Weight >::size_type
   Graph< UserKey, ArticleKey, Weight >::eraseUser(const UserKey &user)
   {
-    return 0;
+    UserTree *userTree = byUser_.find(user);
+    if (!userTree)
+    {
+      return 0;
+    }
+    const size_type removeCount = userTree->size();
+    userTree->traverseLNR(
+        [&](const typename UserTree::value_type &val) -> void
+        {
+          ArticleTree *articleTree = byArticle_.find(val.first);
+          if (articleTree)
+          {
+            articleTree->erase(user);
+            if (articleTree->empty())
+            {
+              byArticle_.erase(val.first);
+            }
+          }
+        });
+    byUser_.erase(user);
+    edges_ -= removeCount;
+    return removeCount;
   }
 
   template < class UserKey, class ArticleKey, class Weight >
   typename Graph< UserKey, ArticleKey, Weight >::size_type
   Graph< UserKey, ArticleKey, Weight >::eraseArticle(const ArticleKey &article)
   {
-    return 0;
+    ArticleTree *articleTree = byArticle_.find(article);
+    if (!articleTree)
+    {
+      return 0;
+    }
+    const size_type removeCount = articleTree->size();
+    articleTree->traverseLNR(
+        [&](const typename ArticleTree::value_type &val) -> void
+        {
+          UserTree *userTree = byUser_.find(val.first);
+          if (userTree)
+          {
+            userTree->erase(article);
+            if (userTree->empty())
+            {
+              byUser_.erase(val.first);
+            }
+          }
+        });
+    byArticle_.erase(article);
+    edges_ -= removeCount;
+    return removeCount;
   }
 
   template < class UserKey, class ArticleKey, class Weight >
   template < class F >
   F Graph< UserKey, ArticleKey, Weight >::traverseUserRatings(const UserKey &user, F f) const
   {
+    const UserTree *userTree = byUser_.find(user);
+    if (userTree)
+    {
+      userTree->traverseLNR([&](const typename UserTree::value_type &val) -> void
+                            { f(val.first, val.second); });
+    }
     return f;
   }
 
@@ -221,13 +301,25 @@ namespace khasnulin
   template < class F >
   F Graph< UserKey, ArticleKey, Weight >::traverseArticleRatings(const ArticleKey &article, F f) const
   {
+    const ArticleTree *articleTree = byArticle_.find(article);
+    if (articleTree)
+    {
+      articleTree->traverseLNR([&](const typename ArticleTree::value_type &val) -> void
+                               { f(val.first, val.second); });
+    }
     return f;
   }
 
+  // Обход по всем
   template < class UserKey, class ArticleKey, class Weight >
   template < class F >
   F Graph< UserKey, ArticleKey, Weight >::traverseAllRatings(F f) const
   {
+    for (const typename UserIndex::public_value_type &pair : byUser_)
+    {
+      pair.second.traverseLNR([&](const typename UserTree::value_type &val) -> void
+                              { f(pair.first, val.first, val.second); });
+    }
     return f;
   }
 }
