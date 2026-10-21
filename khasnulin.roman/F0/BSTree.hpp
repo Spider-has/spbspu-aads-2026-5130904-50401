@@ -3,6 +3,7 @@
 
 #include "BSNode.hpp"
 #include "BSTreeIter.hpp"
+#include <Queue.hpp>
 #include <cassert>
 #include <cstddef>
 #include <functional>
@@ -655,7 +656,26 @@ namespace khasnulin
   template < class F >
   F BSTree< Key, Value, Compare >::traverseBreadth(F f) const
   {
-    // TODO:: add BFS traverse with F func. It can be just with iters
+    if (empty())
+    {
+      return f;
+    }
+    Queue< const Node< Key, Value > * > queue;
+    queue.push(fakeRoot_.left);
+    while (!queue.empty())
+    {
+      const Node< Key, Value > *node = queue.front();
+      queue.pop();
+      f(node->val);
+      if (node->left)
+      {
+        queue.push(node->left);
+      }
+      if (node->right)
+      {
+        queue.push(node->right);
+      }
+    }
     return f;
   }
 
