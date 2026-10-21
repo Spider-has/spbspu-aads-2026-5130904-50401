@@ -104,6 +104,43 @@ namespace khasnulin
     return node;
   }
 
+  template < class Key, class Value >
+  void setLeft(Node< Key, Value > *node, Node< Key, Value > *child) noexcept
+  {
+    assert(node != nullptr);
+    node->left = child;
+    if (child)
+    {
+      child->parent = node;
+    }
+  }
+
+  template < class Key, class Value >
+  void setRight(Node< Key, Value > *node, Node< Key, Value > *child) noexcept
+  {
+    assert(node != nullptr);
+    node->right = child;
+    if (child)
+    {
+      child->parent = node;
+    }
+  }
+
+  template < class Key, class Value >
+  void replaceChild(Node< Key, Value > *parent, const Node< Key, Value > *oldChild,
+                    Node< Key, Value > *newChild) noexcept
+  {
+    assert(parent != nullptr && oldChild != nullptr);
+    assert(oldChild->parent == parent);
+    if (parent->left == oldChild)
+    {
+      setLeft(parent, newChild);
+    }
+    else
+    {
+      setRight(parent, newChild);
+    }
+  }
 }
 
 #endif
