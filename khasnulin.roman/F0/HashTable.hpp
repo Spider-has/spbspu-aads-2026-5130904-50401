@@ -56,6 +56,9 @@ namespace khasnulin
     // Проверить, если ли по ключу K значение
     bool has(const Key &key) const;
 
+    Value *find(const Key &key);
+    const Value *find(const Key &key) const;
+
     // Перехэшировать таблицу с новым числом слотов
     void rehash(size_type buckets);
 
@@ -323,6 +326,18 @@ namespace khasnulin
   {
     return const_cast< value_type * >(
         static_cast< const HashTable * >(this)->findInBucketOrOverflow(bucket, key));
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  Value *HashTable< Key, Value, Hasher, Equal >::find(const Key &key)
+  {
+    return nullptr;
+  }
+
+  template < class Key, class Value, class Hasher, class Equal >
+  const Value *HashTable< Key, Value, Hasher, Equal >::find(const Key &key) const
+  {
+    return nullptr;
   }
 
   // Метод drop

@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(test_drop_from_overflow)
 {
   struct DummyHash
   {
-    size_t operator()(int) const
+    size_t operator()(int a) const
     {
       return 0;
     }
@@ -304,6 +304,145 @@ BOOST_AUTO_TEST_CASE(test_operator_brackets_creation_exception_safety)
   BOOST_CHECK_THROW(ht[5] = "E", std::overflow_error);
   BOOST_CHECK_EQUAL(ht.size(), 4);
   BOOST_CHECK(ht.has(5) == false);
+}
+
+BOOST_AUTO_TEST_CASE(test_find_existing_key_positive)
+{
+  HashTable< int, std::string > ht;
+  ht.add(1, "one");
+  ht.add(2, "two");
+
+  std::string *found = ht.find(1);
+
+  BOOST_REQUIRE(found != nullptr);
+  BOOST_CHECK_EQUAL(*found, "one");
+}
+
+BOOST_AUTO_TEST_CASE(test_find_missing_key_negative)
+{
+  HashTable< int, std::string > ht;
+  ht.add(1, "one");
+
+  BOOST_CHECK(ht.find(42) == nullptr);
+  BOOST_CHECK_EQUAL(ht.size(), 1);
+  BOOST_CHECK(ht.has(42) == false);
+}
+
+BOOST_AUTO_TEST_CASE(test_find_in_empty_table_negative)
+{
+  HashTable< int, std::string > ht;
+
+  BOOST_CHECK(ht.find(1) == nullptr);
+  BOOST_CHECK(ht.empty());
+}
+
+BOOST_AUTO_TEST_CASE(test_find_modify_through_pointer)
+{
+  HashTable< std::string, int > ht;
+  ht.add("apples", 10);
+
+  int *found = ht.find("apples");
+  BOOST_REQUIRE(found != nullptr);
+
+  *found += 5;
+
+  BOOST_CHECK_EQUAL(ht["apples"], 15);
+  BOOST_CHECK_EQUAL(ht.size(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(test_find_const_table)
+{
+  HashTable< int, int > ht;
+  ht.add(1, 100);
+  ht.add(2, 200);
+
+  const HashTable< int, int > &const_ht = ht;
+
+  const int *found = const_ht.find(2);
+  BOOST_REQUIRE(found != nullptr);
+  BOOST_CHECK_EQUAL(*found, 200);
+
+  BOOST_CHECK(const_ht.find(3) == nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(test_find_in_overflow)
+{
+  struct DummyHash
+  {
+    size_t operator()(int) const
+    {
+      return 0;
+    }
+  };
+
+  HashTable< int, int, DummyHash > ht(1);
+  ht.set_overflow_limit(3);
+  for (int i = 1; i <= 6; ++i)
+  {
+    ht.add(i, i * 10);
+  }
+
+  BOOST_REQUIRE_EQUAL(ht.overflow_size(), 2);
+
+  const int *in_bucket = ht.find(2);
+  const int *in_overflow = ht.find(6);
+
+  BOOST_REQUIRE(in_bucket != nullptr);
+  BOOST_REQUIRE(in_overflow != nullptr);
+  BOOST_CHECK_EQUAL(*in_bucket, 20);
+  BOOST_CHECK_EQUAL(*in_overflow, 60);
+  BOOST_CHECK(ht.find(7) == nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(test_find_in_overflow_after_bucket_drop)
+{
+  struct DummyHash
+  {
+    size_t operator()(int a) const
+    {
+      return 0;
+    }
+  };
+
+  HashTable< int, int, DummyHash > ht(1);
+  for (int i = 1; i <= 5; ++i)
+  {
+    ht.add(i, i * 10);
+  }
+
+  ht.drop(1);
+
+  // 5 остался в overflow, хотя в бакете освободилось место
+  const int *found = ht.find(5);
+  BOOST_REQUIRE(found != nullptr);
+  BOOST_CHECK_EQUAL(*found, 50);
+}
+
+BOOST_AUTO_TEST_CASE(test_find_after_drop_negative)
+{
+  HashTable< int, std::string > ht;
+  ht.add(1, "one");
+  ht.drop(1);
+
+  BOOST_CHECK(ht.find(1) == nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(test_find_after_rehash)
+{
+  HashTable< int, int > ht(2);
+  for (int i = 0; i < 8; ++i)
+  {
+    ht.add(i, i * 10);
+  }
+
+  ht.rehash(16);
+
+  for (int i = 0; i < 8; ++i)
+  {
+    const int *found = ht.find(i);
+    BOOST_REQUIRE(found != nullptr);
+    BOOST_CHECK_EQUAL(*found, i * 10);
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
