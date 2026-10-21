@@ -21,7 +21,7 @@ namespace khasnulin
     using key_type = Key;
 
     // тип значения
-    using mapped_type = Key;
+    using mapped_type = Value;
 
     // Пара ключ-значение для хранения
     using public_value_type = std::pair< const Key, Value >;
@@ -171,12 +171,12 @@ namespace khasnulin
   // объект rhs в итоге ничем не владеет.
   template < class Key, class Value, class Hasher, class Equal >
   HashTable< Key, Value, Hasher, Equal >::HashTable(HashTable< Key, Value, Hasher, Equal > &&rhs) noexcept:
-      buckets_(std::move(rhs.buckets_)),
-      overflow_(std::move(rhs.overflow_)),
+      elements_count_(rhs.elements_count_),
+      max_overflow_limit_(rhs.max_overflow_limit_),
       hasher_(std::move(rhs.hasher_)),
       equal_(std::move(rhs.equal_)),
-      elements_count_(rhs.elements_count_),
-      max_overflow_limit_(rhs.max_overflow_limit_)
+      buckets_(std::move(rhs.buckets_)),
+      overflow_(std::move(rhs.overflow_))
   {
     rhs.elements_count_ = 0;
   }
@@ -185,12 +185,12 @@ namespace khasnulin
   // передаем в списки инициализации const ссылки на поля в rhs объекте
   template < class Key, class Value, class Hasher, class Equal >
   HashTable< Key, Value, Hasher, Equal >::HashTable(const HashTable< Key, Value, Hasher, Equal > &rhs):
-      buckets_(rhs.buckets_),
-      overflow_(rhs.overflow_),
+      elements_count_(rhs.elements_count_),
+      max_overflow_limit_(rhs.max_overflow_limit_),
       hasher_(rhs.hasher_),
       equal_(rhs.equal_),
-      elements_count_(rhs.elements_count_),
-      max_overflow_limit_(rhs.max_overflow_limit_)
+      buckets_(rhs.buckets_),
+      overflow_(rhs.overflow_)
   {
   }
 
@@ -397,6 +397,8 @@ namespace khasnulin
     // Создаем временную HashTable с buckets кол-вом bucket и max_overflow_limit равным текущему.
     HashTable< Key, Value, Hasher, Equal > temp(buckets);
     temp.max_overflow_limit_ = max_overflow_limit_;
+    temp.hasher_ = hasher_;
+    temp.equal_ = equal_;
     // копируем все пары ключ-значение в нашу новую hashMap, учитывая рехэширование.
     for (const public_value_type &item : (*this))
     {
@@ -506,17 +508,19 @@ namespace khasnulin
   {
     return HIter< Key, Value, Hasher, Equal >(*this, true);
   }
+
   template < class Key, class Value, class Hasher, class Equal >
   typename HashTable< Key, Value, Hasher, Equal >::const_iterator
   HashTable< Key, Value, Hasher, Equal >::cbegin() const noexcept
   {
-    return HIter< Key, Value, Hasher, Equal >(*this, false);
+    return CHIter< Key, Value, Hasher, Equal >(*this, false);
   }
+
   template < class Key, class Value, class Hasher, class Equal >
   typename HashTable< Key, Value, Hasher, Equal >::const_iterator
   HashTable< Key, Value, Hasher, Equal >::cend() const noexcept
   {
-    return HIter< Key, Value, Hasher, Equal >(*this, true);
+    return CHIter< Key, Value, Hasher, Equal >(*this, true);
   }
 
   template < class Key, class Value, class Hasher, class Equal >
