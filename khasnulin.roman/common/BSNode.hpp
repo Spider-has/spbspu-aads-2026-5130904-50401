@@ -5,16 +5,29 @@
 #include <utility>
 namespace khasnulin
 {
-  template < class Key, class Value > struct Node
+
+  template < class Key, class Value > struct Node;
+  template < class Key, class Value > struct NodeBase
+  {
+    NodeBase *parent;
+    Node< Key, Value > *left;
+    Node< Key, Value > *right;
+
+    NodeBase() noexcept;
+  };
+
+  template < class Key, class Value >
+  NodeBase< Key, Value >::NodeBase() noexcept:
+      parent(nullptr),
+      left(nullptr),
+      right(nullptr)
+  {
+  }
+
+  template < class Key, class Value > struct Node : NodeBase< Key, Value >
   {
     using value_pair = std::pair< const Key, Value >;
-
-    Node *parent;
-    Node *left;
-    Node *right;
     value_pair val;
-
-    Node() noexcept;
 
     explicit Node(const value_pair &rhs);
     explicit Node(value_pair &&rhs);
@@ -24,32 +37,20 @@ namespace khasnulin
   };
 
   template < class Key, class Value >
-  Node< Key, Value >::Node() noexcept:
-      parent(nullptr),
-      left(nullptr),
-      right(nullptr),
-      val()
-  {
-  }
-
-  template < class Key, class Value >
   Node< Key, Value >::Node(const value_pair &rhs):
-      parent(nullptr),
-      left(nullptr),
-      right(nullptr),
+      NodeBase< Key, Value >(),
       val(rhs)
   {
   }
 
   template < class Key, class Value >
   Node< Key, Value >::Node(value_pair &&rhs):
-      parent(nullptr),
-      left(nullptr),
-      right(nullptr),
+      NodeBase< Key, Value >(),
       val(std::move(rhs))
   {
   }
 
+  // Вызывать с Node* или NodeBase*
   template < class NodePtr > NodePtr minNode(NodePtr node) noexcept
   {
     assert(node != nullptr && "node can't be nullptr");
@@ -60,6 +61,7 @@ namespace khasnulin
     return node;
   }
 
+  // Вызывать с Node* или NodeBase*
   template < class NodePtr > NodePtr maxNode(NodePtr node) noexcept
   {
     assert(node != nullptr && "node can't be nullptr");
@@ -70,6 +72,7 @@ namespace khasnulin
     return node;
   }
 
+  // Вызывать с NodeBase*
   template < class NodePtr > NodePtr nextNode(NodePtr node) noexcept
   {
     assert(node != nullptr && "node can't be nullptr");
@@ -87,6 +90,7 @@ namespace khasnulin
     return node;
   }
 
+  // Вызывать с NodeBase*
   template < class NodePtr > NodePtr prevNode(NodePtr node) noexcept
   {
     assert(node != nullptr && "node can't be nullptr");
@@ -105,7 +109,7 @@ namespace khasnulin
   }
 
   template < class Key, class Value >
-  void setLeft(Node< Key, Value > *node, Node< Key, Value > *child) noexcept
+  void setLeft(NodeBase< Key, Value > *node, Node< Key, Value > *child) noexcept
   {
     assert(node != nullptr);
     node->left = child;
@@ -116,7 +120,7 @@ namespace khasnulin
   }
 
   template < class Key, class Value >
-  void setRight(Node< Key, Value > *node, Node< Key, Value > *child) noexcept
+  void setRight(NodeBase< Key, Value > *node, Node< Key, Value > *child) noexcept
   {
     assert(node != nullptr);
     node->right = child;
@@ -127,7 +131,7 @@ namespace khasnulin
   }
 
   template < class Key, class Value >
-  void replaceChild(Node< Key, Value > *parent, const Node< Key, Value > *oldChild,
+  void replaceChild(NodeBase< Key, Value > *parent, const Node< Key, Value > *oldChild,
                     Node< Key, Value > *newChild) noexcept
   {
     assert(parent != nullptr && oldChild != nullptr);
