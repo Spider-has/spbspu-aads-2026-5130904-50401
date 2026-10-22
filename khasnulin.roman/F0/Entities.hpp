@@ -34,15 +34,9 @@ namespace khasnulin
     explicit Tag(const std::string &tag);
     const std::string &value() const noexcept;
 
-    bool operator<(const Tag &rhs) const noexcept
-    {
-      return tag_ < rhs.tag_;
-    }
+    bool operator<(const Tag &rhs) const noexcept;
 
-    bool operator==(const Tag &rhs) const noexcept
-    {
-      return tag_ == rhs.tag_;
-    }
+    bool operator==(const Tag &rhs) const noexcept;
 
   private:
     std::string tag_;
