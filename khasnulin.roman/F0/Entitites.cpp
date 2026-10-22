@@ -1,9 +1,15 @@
 #include "Entities.hpp"
+#include <stdexcept>
+#include <string>
 
-khasnulin::Category::Category(const std::string &category):
-    category_(category)
+khasnulin::Category::Category(const std::string &category)
 {
-  // TODO: normilize
+  std::string normalized = normalizeLabel(category);
+  if (isDifficultyName(normalized))
+  {
+    throw std::invalid_argument("category can't be names as difficulty level");
+  }
+  category_ = normalized;
 }
 
 const std::string &khasnulin::Category::value() const noexcept
@@ -19,9 +25,8 @@ khasnulin::Category khasnulin::Category::fromNormalized(const std::string &norma
 }
 
 khasnulin::Tag::Tag(const std::string &tag):
-    tag_(tag)
+    tag_(normalizeLabel(tag))
 {
-  // TODO :normilize
 }
 
 const std::string &khasnulin::Tag::value() const noexcept
@@ -44,15 +49,13 @@ khasnulin::User::User():
     preferences_(),
     latent_{}
 {
-  // TODO: impl
 }
 
 khasnulin::User::User(const std::string &name, const Latent &latent):
-    name_(name),
+    name_(normalizeLabel(name)),
     preferences_(),
     latent_(latent)
 {
-  // TODO: impl
 }
 
 const std::string &khasnulin::User::name() const noexcept
@@ -89,18 +92,16 @@ khasnulin::Article::Article():
     tags_(),
     latent_{}
 {
-  // TODO: impl
 }
 
 khasnulin::Article::Article(const std::string &name, const Category &category, const Difficulty &difficulty,
                             const Latent &latent):
-    name_(name),
+    name_(normalizeLabel(name)),
     category_(category.value()),
     difficulty_(difficulty),
     tags_(),
     latent_(latent)
 {
-  // TODO : impl
 }
 
 const std::string &khasnulin::Article::name() const noexcept
@@ -147,17 +148,37 @@ std::string khasnulin::normalizeLabel(const std::string &label)
 
 khasnulin::Difficulty khasnulin::parseDifficulty(const std::string &raw)
 {
-  (void)raw;
-  return Difficulty::advanced;
+  std::string normalized = normalizeLabel(raw);
+  if (normalized == "beginner")
+  {
+    return Difficulty::beginner;
+  }
+  if (normalized == "intermediate")
+  {
+    return Difficulty::advanced;
+  }
+  if (normalized == "advanced")
+  {
+    return Difficulty::intermediate;
+  }
+  throw std::invalid_argument("incorrect difficulty raw");
 }
 
 const char *khasnulin::toString(Difficulty d) noexcept
 {
-  (void)d;
+  switch (d)
+  {
+  case Difficulty::beginner:
+    return "beginner";
+  case Difficulty::intermediate:
+    return "intermediate";
+  case Difficulty::advanced:
+    return "advanced";
+  }
   return "";
 }
 
 bool khasnulin::isDifficultyName(const std::string &normalized) noexcept
 {
-  return normalized.empty();
+  return normalized == "beginner" || normalized == "intermediate" || normalized == "advanced";
 }
