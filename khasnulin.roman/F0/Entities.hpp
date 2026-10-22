@@ -21,7 +21,9 @@ namespace khasnulin
     const std::string &value() const noexcept;
 
   private:
+    Category() = default;
     static Category fromNormalized(const std::string &normalized);
+
     std::string category_;
     friend class Article;
   };
