@@ -48,7 +48,9 @@ namespace khasnulin
 
   private:
     // тип узла дерева: либо const, либо обычный в зависимости от типа итератора
-    using node_ptr = std::conditional_t< IsConst, const Node< Key, Value > *, Node< Key, Value > * >;
+    using node_ptr = std::conditional_t< IsConst, const NodeBase< Key, Value > *, NodeBase< Key, Value > * >;
+
+    using nodePointer = std::conditional_t< IsConst, const Node< Key, Value > *, Node< Key, Value > * >;
 
     // делаем BSTree дружественным, чтобы он мог вызывать приватный конструктор
     template < class, class, class > friend class BSTree;
@@ -116,14 +118,14 @@ namespace khasnulin
   typename BSTreeIterator< Key, Value, IsConst >::reference
   BSTreeIterator< Key, Value, IsConst >::operator*() const noexcept
   {
-    return node_->val;
+    return static_cast< nodePointer >(node_)->val;
   }
 
   template < class Key, class Value, bool IsConst >
   typename BSTreeIterator< Key, Value, IsConst >::pointer
   BSTreeIterator< Key, Value, IsConst >::operator->() const noexcept
   {
-    return &node_->val;
+    return &(this->operator*());
   }
 
   template < class Key, class Value, bool IsConst >

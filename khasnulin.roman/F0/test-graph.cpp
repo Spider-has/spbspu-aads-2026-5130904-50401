@@ -30,7 +30,6 @@ namespace
     return out;
   }
 
-  // change
   void checkInvariants(const IntGraph &g, const Reference &ref)
   {
     BOOST_REQUIRE_EQUAL(g.ratingsCount(), ref.size());

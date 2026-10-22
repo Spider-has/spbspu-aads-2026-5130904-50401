@@ -21,10 +21,6 @@ namespace khasnulin
   template < class Key, class Value, class Compare = std::less< Key > > class BSTree
   {
 
-    static_assert(std::is_nothrow_default_constructible< Key >::value,
-                  "BSTree: Key must be nothrow default constructible (used by sentinel node)");
-    static_assert(std::is_nothrow_default_constructible< Value >::value,
-                  "BSTree: Value must be nothrow default constructible (used by sentinel node)");
     static_assert(std::is_nothrow_destructible< Key >::value && std::is_nothrow_destructible< Value >::value,
                   "BSTree: Key and Value destructors must not throw");
     static_assert(std::is_nothrow_move_constructible< Compare >::value &&
@@ -117,19 +113,19 @@ namespace khasnulin
     struct FindResult
     {
       Node< Key, Value > *node;
-      Node< Key, Value > *parent;
+      NodeBase< Key, Value > *parent;
       bool isLeft;
     };
     // const метод возвращает не const данные. Сделано специально для внутренного использования.
     FindResult findByKey(const Key &k) const;
     template < class P > iter insertImpl(P &&pair);
-    void addNewNodeToTree(Node< Key, Value > *node, Node< Key, Value > *parent, bool isLeft) noexcept;
+    void addNewNodeToTree(Node< Key, Value > *node, NodeBase< Key, Value > *parent, bool isLeft) noexcept;
 
     void unlinkAndDeleteNode(Node< Key, Value > *node) noexcept;
 
     size_type size_;
 
-    Node< Key, Value > fakeRoot_;
+    NodeBase< Key, Value > fakeRoot_;
 
     Compare comparator_;
   };
@@ -138,7 +134,7 @@ namespace khasnulin
   void BSTree< Key, Value, Compare >::unlinkAndDeleteNode(Node< Key, Value > *node) noexcept
   {
     assert(node != nullptr && node != &fakeRoot_);
-    Node< Key, Value > *parent = node->parent;
+    NodeBase< Key, Value > *parent = node->parent;
     Node< Key, Value > *oldNode = node;
     Node< Key, Value > *newNode = oldNode->left ? oldNode->left : oldNode->right;
     bool isLeft = (parent->left == node);
@@ -198,14 +194,15 @@ namespace khasnulin
   {
     try
     {
-      const Node< Key, Value > *currRhs = rhs.fakeRoot_.left;
-      const Node< Key, Value > *prevRhs = &rhs.fakeRoot_;
-      Node< Key, Value > *curr = &fakeRoot_;
+      const NodeBase< Key, Value > *currRhs = rhs.fakeRoot_.left;
+      const NodeBase< Key, Value > *prevRhs = &rhs.fakeRoot_;
+      NodeBase< Key, Value > *curr = &fakeRoot_;
       while (currRhs && currRhs != &rhs.fakeRoot_)
       {
         if (prevRhs == currRhs->parent)
         {
-          Node< Key, Value > *newNode = new Node< Key, Value >(currRhs->val);
+          Node< Key, Value > *newNode =
+              new Node< Key, Value >(static_cast< const Node< Key, Value > * >(currRhs)->val);
           if (currRhs == prevRhs->left)
           {
             curr->left = newNode;
@@ -334,7 +331,7 @@ namespace khasnulin
       return 0;
     }
     size_type maxHeight = 0;
-    const Node< Key, Value > *curr = it.node_;
+    const Node< Key, Value > *curr = static_cast< const Node< Key, Value > * >(it.node_);
     size_type currHeight = 1;
     while (true)
     {
@@ -358,9 +355,9 @@ namespace khasnulin
           {
             return maxHeight;
           }
-          const Node< Key, Value > *parent = curr->parent;
+          const NodeBase< Key, Value > *parent = curr->parent;
           bool isLeft = (parent->left == curr);
-          curr = parent;
+          curr = static_cast< const Node< Key, Value > * >(parent);
           --currHeight;
           if (isLeft && curr->right)
           {
@@ -377,7 +374,7 @@ namespace khasnulin
   template < class Key, class Value, class Compare >
   typename BSTree< Key, Value, Compare >::iter BSTree< Key, Value, Compare >::begin() noexcept
   {
-    Node< Key, Value > *min = minNode(&fakeRoot_);
+    NodeBase< Key, Value > *min = minNode(&fakeRoot_);
     return iter(min);
   }
 
@@ -451,7 +448,7 @@ namespace khasnulin
   typename BSTree< Key, Value, Compare >::FindResult
   BSTree< Key, Value, Compare >::findByKey(const Key &k) const
   {
-    Node< Key, Value > *parent = const_cast< Node< Key, Value > * >(&fakeRoot_);
+    NodeBase< Key, Value > *parent = const_cast< NodeBase< Key, Value > * >(&fakeRoot_);
     Node< Key, Value > *curr = fakeRoot_.left;
     bool isLeft = true;
     while (curr)
@@ -491,8 +488,8 @@ namespace khasnulin
   }
 
   template < class Key, class Value, class Compare >
-  void BSTree< Key, Value, Compare >::addNewNodeToTree(Node< Key, Value > *node, Node< Key, Value > *parent,
-                                                       bool isLeft) noexcept
+  void BSTree< Key, Value, Compare >::addNewNodeToTree(Node< Key, Value > *node,
+                                                       NodeBase< Key, Value > *parent, bool isLeft) noexcept
   {
     if (isLeft)
     {
@@ -551,8 +548,9 @@ namespace khasnulin
     {
       return end();
     }
-    Node< Key, Value > *next = nextNode(const_cast< Node< Key, Value > * >(it.node_));
-    unlinkAndDeleteNode(const_cast< Node< Key, Value > * >(it.node_));
+    NodeBase< Key, Value > *base = const_cast< NodeBase< Key, Value > * >(it.node_);
+    NodeBase< Key, Value > *next = nextNode(base);
+    unlinkAndDeleteNode(static_cast< Node< Key, Value > * >(base));
     return iter(next);
   }
 
@@ -571,9 +569,9 @@ namespace khasnulin
       }
       else
       {
-        Node< Key, Value > *parent = curr->parent;
+        NodeBase< Key, Value > *parent = curr->parent;
         unlinkAndDeleteNode(curr);
-        curr = parent;
+        curr = (parent == &fakeRoot_) ? nullptr : static_cast< Node< Key, Value > * >(parent);
       }
     }
   }
@@ -608,8 +606,9 @@ namespace khasnulin
     {
       throw std::logic_error("rotate left: can't make rotate, some nodes doesn't exists");
     }
-    Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
-    Node< Key, Value > *parent = oldRoot->parent;
+    Node< Key, Value > *oldRoot =
+        static_cast< Node< Key, Value > * >(const_cast< NodeBase< Key, Value > * >(it.node_));
+    NodeBase< Key, Value > *parent = oldRoot->parent;
     Node< Key, Value > *newRoot = oldRoot->right;
     replaceChild(parent, oldRoot, newRoot);
     setRight(oldRoot, newRoot->left);
@@ -624,8 +623,9 @@ namespace khasnulin
     {
       throw std::logic_error("rotate right: can't make rotate, some nodes doesn't exists");
     }
-    Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
-    Node< Key, Value > *parent = oldRoot->parent;
+    Node< Key, Value > *oldRoot =
+        static_cast< Node< Key, Value > * >(const_cast< NodeBase< Key, Value > * >(it.node_));
+    NodeBase< Key, Value > *parent = oldRoot->parent;
     Node< Key, Value > *newRoot = oldRoot->left;
     replaceChild(parent, oldRoot, newRoot);
     setLeft(oldRoot, newRoot->right);
@@ -640,8 +640,9 @@ namespace khasnulin
     {
       throw std::logic_error("large left rotate: can't make rotate, some nodes doesn't exists");
     }
-    Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
-    Node< Key, Value > *parent = oldRoot->parent;
+    Node< Key, Value > *oldRoot =
+        static_cast< Node< Key, Value > * >(const_cast< NodeBase< Key, Value > * >(it.node_));
+    NodeBase< Key, Value > *parent = oldRoot->parent;
     Node< Key, Value > *rightChild = oldRoot->right;
     Node< Key, Value > *newRoot = rightChild->left;
     replaceChild(parent, oldRoot, newRoot);
@@ -659,8 +660,9 @@ namespace khasnulin
     {
       throw std::logic_error("large right rotate: can't make rotate, some nodes doesn't exists");
     }
-    Node< Key, Value > *oldRoot = const_cast< Node< Key, Value > * >(it.node_);
-    Node< Key, Value > *parent = oldRoot->parent;
+    Node< Key, Value > *oldRoot =
+        static_cast< Node< Key, Value > * >(const_cast< NodeBase< Key, Value > * >(it.node_));
+    NodeBase< Key, Value > *parent = oldRoot->parent;
     Node< Key, Value > *leftChild = oldRoot->left;
     Node< Key, Value > *newRoot = leftChild->right;
     replaceChild(parent, oldRoot, newRoot);
