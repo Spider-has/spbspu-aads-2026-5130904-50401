@@ -32,24 +32,21 @@ namespace khasnulin
     explicit Tag(const std::string &tag);
     const std::string &value() const noexcept;
 
+    bool operator<(const Tag &rhs) const noexcept
+    {
+      return tag_ < rhs.tag_;
+    }
+
+    bool operator==(const Tag &rhs) const noexcept
+    {
+      return tag_ == rhs.tag_;
+    }
+
   private:
-    static Tag fromNormalized(const std::string &normalized);
     std::string tag_;
   };
 
-  class TagSet
-  {
-  public:
-    bool insert(const Tag &tag);
-    bool contains(const Tag &tag) const;
-    std::size_t size() const noexcept;
-    bool empty() const noexcept;
-
-    template < class F > void traverse(F f) const;
-
-  private:
-    BSTree< std::string, bool > tags_;
-  };
+  using TagSet = BSTree< Tag, bool >;
 
   constexpr std::size_t latentDimensionCount = 8;
 
@@ -83,15 +80,16 @@ namespace khasnulin
   class Article
   {
   public:
-    // Конструктор по умолчанию для того, чтобы хранить article в hash table
+    // только для HashTable; доменный код такие объекты не создаёт и не читает; у такой статьи пустая
+    // категория, и category() вернёт невалидную Category
     Article();
 
     Article(const std::string &name, const Category &category, const Difficulty &difficulty,
             const Latent &latent);
 
     const std::string &name() const noexcept;
-    const Category &category() const noexcept;
-    const Difficulty &difficulty() const noexcept;
+    Category category() const;
+    Difficulty difficulty() const noexcept;
 
     bool addTag(const Tag &tag);
     const TagSet &tags() const noexcept;
@@ -101,7 +99,7 @@ namespace khasnulin
 
   private:
     std::string name_;
-    Category catergory_;
+    std::string category_;
     Difficulty difficulty_;
     TagSet tags_;
     Latent latent_;
@@ -109,10 +107,10 @@ namespace khasnulin
 
   // приводит строку к единому формату: строго слова, разделенные одним пробелом
   // словом считается любая последовательность букв, чисел и специсимволов(@, +, -, ~ и etc)
-  // правила: используются строго латинские буквы, в строке должна быть хотя бы одна буква.
-  // все лишние пробелы удаляются
-  // строка всегда приводится к нижнему регистру
-  // если в одно из правил нарушено -- бросаем std::invalid_argument
+  // правила: используются строго латинские буквы, в строке должна быть хотя бы одна буква. допустимы только
+  // печатные ASCII-символы (0x20–0x7E), кроме ".
+  // все лишние пробелы удаляются строка всегда приводится к нижнему регистру если в одно из правил
+  // нарушено -- бросаем std::invalid_argument
   std::string normalizeLabel(const std::string &label);
 
   // нормализует raw и сверяет по спец. значениям difficulty, если ничего не подошло -- бросает std::invalid
