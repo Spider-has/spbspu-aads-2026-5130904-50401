@@ -141,6 +141,21 @@ namespace khasnulin
     Latent latent_;
   };
 
+  class Rating
+  {
+  public:
+    static constexpr int minRating = 1;
+    static constexpr int maxRating = 10;
+
+    explicit Rating(int rating);
+    int value() const noexcept;
+
+    bool operator==(const Rating &rhs) const noexcept;
+
+  private:
+    int rating_;
+  };
+
   // Приводит строку к единому формату: слова, разделённые ровно одним пробелом.
   // Словом считается любая последовательность латинских букв, цифр и спецсимволов (@, +, -, ~ и т. д.).
   // Правила:
