@@ -63,6 +63,8 @@ namespace khasnulin
 
     void clear();
 
+    void swap(AutoHashTable &rhs) noexcept;
+
   private:
     static constexpr size_type MAX_GROW_ATTEMPTS = 8;
     bool needGrow() const noexcept;
@@ -242,6 +244,13 @@ namespace khasnulin
   {
     hashTable_ = HashTable< Key, Value, Hash, Equal >(hashTable_.bucket_size());
   }
+
+  template < class Key, class Value, class Hash, class Equal >
+  void AutoHashTable< Key, Value, Hash, Equal >::swap(AutoHashTable &rhs) noexcept
+  {
+    khasnulin::swap(hashTable_, rhs.hashTable_);
+  }
+
 }
 
 #endif

@@ -12,6 +12,10 @@
 namespace khasnulin
 {
 
+  template < class Key, class Value, class Hasher, class Equal >
+  void swap(HashTable< Key, Value, Hasher, Equal > &lhs,
+            HashTable< Key, Value, Hasher, Equal > &rhs) noexcept;
+
   // Шаблон с типами: КЛЮЧ, ЗНАЧЕНИЕ, ОБЪЕКТ-ХЭШЕР, ОБЪЕКТ КОМПАРАТОР
   template < class Key, class Value, class Hash = std::hash< Key >, class Equal = std::equal_to< Key > >
   class HashTable
@@ -90,6 +94,9 @@ namespace khasnulin
 
     // Поставить новый лимит для списка overflow значений
     void set_overflow_limit(size_type limit) noexcept;
+
+    friend void swap< Key, Value, Hash, Equal >(HashTable< Key, Value, Hash, Equal > &lhs,
+                                                HashTable< Key, Value, Hash, Equal > &rhs) noexcept;
 
   private:
     using value_type = std::pair< Key, Value >;
