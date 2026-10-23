@@ -468,3 +468,40 @@ BOOST_AUTO_TEST_CASE(copy_is_independent)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(rating_tests)
+
+BOOST_AUTO_TEST_CASE(accepts_bounds)
+{
+  BOOST_CHECK(Rating(Rating::minRating).value() == 1);
+  BOOST_CHECK(Rating(Rating::maxRating).value() == 10);
+}
+
+BOOST_AUTO_TEST_CASE(accepts_value_inside_range)
+{
+  BOOST_CHECK(Rating(7).value() == 7);
+}
+
+BOOST_AUTO_TEST_CASE(throws_outside_range)
+{
+  BOOST_CHECK_THROW(Rating(0), std::invalid_argument);
+  BOOST_CHECK_THROW(Rating(11), std::invalid_argument);
+  BOOST_CHECK_THROW(Rating(-5), std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(equality_compares_values)
+{
+  BOOST_CHECK(Rating(5) == Rating(5));
+  BOOST_CHECK((Rating(5) == Rating(6)) == false);
+}
+
+BOOST_AUTO_TEST_CASE(copy_keeps_value)
+{
+  Rating original(9);
+  Rating copy = original;
+  BOOST_CHECK(copy == original);
+  copy = Rating(3);
+  BOOST_CHECK(original.value() == 9);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
