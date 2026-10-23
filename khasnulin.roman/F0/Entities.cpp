@@ -262,7 +262,7 @@ khasnulin::Rating::Rating(int rating)
 {
   if (rating < minRating || rating > maxRating)
   {
-    throw std::invalid_argument("rating must be strictly between 1 and 10");
+    throw std::invalid_argument("rating must be in [1, 10]");
   }
   rating_ = rating;
 }
