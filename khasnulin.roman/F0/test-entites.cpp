@@ -382,6 +382,14 @@ BOOST_AUTO_TEST_CASE(preferences_are_sorted)
   std::vector< std::string > expected = {"cpp", "go", "rust"};
   BOOST_CHECK(collectTags(user.preferences()) == expected);
 }
+BOOST_AUTO_TEST_CASE(less_compares_values_case_sensitively)
+{
+  BOOST_CHECK(UserName("alex") < UserName("roman"));
+  BOOST_CHECK((UserName("roman") < UserName("alex")) == false);
+  BOOST_CHECK(UserName("Roman") < UserName("roman"));
+  BOOST_CHECK((UserName("roman") < UserName("Roman")) == false);
+  BOOST_CHECK((UserName("roman") < UserName("roman")) == false);
+}
 
 BOOST_AUTO_TEST_CASE(latent_is_mutable)
 {
