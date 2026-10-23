@@ -73,6 +73,46 @@ namespace khasnulin
     Graph< std::string, std::string, Rating > ratings_;
     RefCountIndex< Tag > tagsIndex_;
   };
+
+  // false, если статьи или пользователя нет,
+  // learn(Latent &user, Latent &article, const Rating &) noexcept для обучения.
+  template < class Learn >
+  bool Storage::rate(const UserName &user, const ArticleName &article, const Rating &rating, Learn learn)
+  {
+    return false;
+  }
+
+  // для несуществующей сущности в обходах рейтингов и счётчиках (f не вызывается, счётчик 0)
+  // F(const User&);
+  template < class F > F Storage::traverseUsers(F f) const
+  {
+    return f;
+  }
+  // F(const Article&);
+  template < class F > F Storage::traverseArticles(F f) const
+  {
+    return f;
+  }
+  // F(const Tag &, count_type)
+  template < class F > F Storage::traverseTags(F f) const
+  {
+    return f;
+  }
+  // F(const Category&, count_type);
+  template < class F > F Storage::traverseCategories(F f) const
+  {
+    return f;
+  }
+  // F(const Article&, const Rating&);
+  template < class F > F Storage::traverseUserRatings(const UserName &user, F f) const
+  {
+    return f;
+  }
+  // F(const User&, const Rating&);
+  template < class F > F Storage::traverseArticleRatings(const ArticleName &article, F f) const
+  {
+    return f;
+  }
 }
 
 #endif
