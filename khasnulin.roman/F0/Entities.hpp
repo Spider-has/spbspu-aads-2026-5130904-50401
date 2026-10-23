@@ -44,6 +44,26 @@ namespace khasnulin
 
   using TagSet = BSTree< Tag, bool >;
 
+  template < class Kind > class Name
+  {
+  public:
+    // бросает std::invalid_argument, если raw не проходит normalizeText
+    explicit Name(const std::string &raw);
+    const std::string &value() const noexcept;
+
+  private:
+    std::string value_;
+  };
+
+  struct UserNameKind;
+  struct ArticleNameKind;
+
+  using UserName = Name< UserNameKind >;
+  using ArticleName = Name< ArticleNameKind >;
+
+  extern template class Name< UserNameKind >;
+  extern template class Name< ArticleNameKind >;
+
   constexpr std::size_t latentDimensionCount = 8;
 
   struct Latent
@@ -58,7 +78,7 @@ namespace khasnulin
     User();
 
     // может бросить invalid argument на name
-    User(const std::string &name, const Latent &latent);
+    User(const UserName &name, const Latent &latent);
 
     const std::string &name() const noexcept;
 
@@ -82,7 +102,7 @@ namespace khasnulin
     Article();
 
     // может бросить invalid argument на name, category, difficulty
-    Article(const std::string &name, const Category &category, const Difficulty &difficulty,
+    Article(const ArticleName &name, const Category &category, const Difficulty &difficulty,
             const Latent &latent);
 
     const std::string &name() const noexcept;
@@ -103,15 +123,18 @@ namespace khasnulin
     Latent latent_;
   };
 
-  // приводит строку к единому формату: строго слова, разделенные одним пробелом
-  // словом считается любая последовательность букв, чисел и специсимволов(@, +, -, ~ и etc)
-  // правила: используются строго латинские буквы, в строке должна быть хотя бы одна буква. допустимы только
-  // печатные ASCII-символы (0x20–0x7E), кроме ".
-  // все лишние пробелы удаляются строка всегда приводится к нижнему регистру если в одно из правил
-  // нарушено -- бросаем std::invalid_argument
+  // Приводит строку к единому формату: слова, разделённые ровно одним пробелом.
+  // Словом считается любая последовательность латинских букв, цифр и спецсимволов (@, +, -, ~ и т. д.).
+  // Правила:
+  //   - допустимы только печатные ASCII-символы (0x20–0x7E), кроме ";
+  //   - в строке должна быть хотя бы одна латинская буква;
+  //   - пробелы в начале и в конце удаляются, серии пробелов внутри схлопываются в один;
+  //   - результат приводится к нижнему регистру.
+  // Если нарушено хотя бы одно правило, бросает std::invalid_argument.
+  // Рассчитана на локаль "C" (использует <cctype>).
   std::string normalizeLabel(const std::string &label);
 
-  // то же, что и normilized label, но не приводит в lowercase
+  // То же, что и normalizeLabel, но регистр сохраняется.
   std::string normalizeText(const std::string &text);
 
   // нормализует raw и сверяет по спец. значениям difficulty, если ничего не подошло -- бросает
