@@ -3,12 +3,35 @@
 #include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using namespace khasnulin;
 
 namespace
 {
+  // Гарантии типов имён проверяются на этапе компиляции.
+  static_assert(std::is_constructible< UserName, std::string >::value,
+                "UserName must be constructible from string");
+  static_assert(!std::is_convertible< std::string, UserName >::value,
+                "UserName constructor must be explicit");
+  static_assert(!std::is_convertible< const char *, ArticleName >::value,
+                "ArticleName constructor must be explicit");
+  static_assert(!std::is_convertible< UserName, std::string >::value,
+                "UserName must not convert to string implicitly");
+  static_assert(!std::is_default_constructible< UserName >::value,
+                "UserName must not be default constructible outside entities");
+  static_assert(!std::is_default_constructible< ArticleName >::value,
+                "ArticleName must not be default constructible outside entities");
+  static_assert(!std::is_constructible< ArticleName, UserName >::value,
+                "ArticleName must not be constructible from UserName");
+  static_assert(!std::is_constructible< UserName, ArticleName >::value,
+                "UserName must not be constructible from ArticleName");
+  static_assert(!std::is_assignable< UserName &, ArticleName >::value,
+                "ArticleName must not be assignable to UserName");
+  static_assert(!std::is_default_constructible< Category >::value,
+                "Category must not be default constructible outside Article");
+
   std::vector< std::string > collectTags(const TagSet &tags)
   {
     std::vector< std::string > result;
@@ -119,6 +142,91 @@ BOOST_AUTO_TEST_CASE(throws_on_control_chars)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(normalize_text_tests)
+
+BOOST_AUTO_TEST_CASE(preserves_case)
+{
+  BOOST_CHECK(normalizeText("  Advanced   C++ ") == "Advanced C++");
+}
+
+BOOST_AUTO_TEST_CASE(is_idempotent)
+{
+  std::string once = normalizeText("  Advanced   C++ ");
+  BOOST_CHECK(normalizeText(once) == once);
+}
+
+BOOST_AUTO_TEST_CASE(throws_on_invalid_input)
+{
+  BOOST_CHECK_THROW(normalizeText("   "), std::invalid_argument);
+  BOOST_CHECK_THROW(normalizeText("c\"pp"), std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(throws_without_letters)
+{
+  BOOST_CHECK_THROW(normalizeText("2024"), std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(throws_on_non_ascii)
+{
+  BOOST_CHECK_THROW(normalizeText("Роман"), std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(name_tests)
+
+BOOST_AUTO_TEST_CASE(stores_normalized_value_preserving_case)
+{
+  UserName name("  Roman   Khasnulin ");
+  BOOST_CHECK(name.value() == "Roman Khasnulin");
+}
+
+BOOST_AUTO_TEST_CASE(article_name_normalizes_too)
+{
+  ArticleName name("  Advanced   C++ ");
+  BOOST_CHECK(name.value() == "Advanced C++");
+}
+
+BOOST_AUTO_TEST_CASE(throws_on_invalid_value)
+{
+  BOOST_CHECK_THROW(UserName(""), std::invalid_argument);
+  BOOST_CHECK_THROW(UserName("    "), std::invalid_argument);
+  BOOST_CHECK_THROW(UserName("123"), std::invalid_argument);
+  BOOST_CHECK_THROW(UserName("Ro\"man"), std::invalid_argument);
+  BOOST_CHECK_THROW(UserName("Роман"), std::invalid_argument);
+  BOOST_CHECK_THROW(UserName("Ro\tman"), std::invalid_argument);
+  BOOST_CHECK_THROW(ArticleName("\"quoted\""), std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE(equal_after_normalization)
+{
+  BOOST_CHECK(UserName(" Roman   K ") == UserName("Roman K"));
+  BOOST_CHECK((UserName("Roman") == UserName("Alex")) == false);
+}
+
+BOOST_AUTO_TEST_CASE(equality_is_case_sensitive)
+{
+  BOOST_CHECK((UserName("Roman") == UserName("roman")) == false);
+  BOOST_CHECK((ArticleName("Advanced C++") == ArticleName("advanced c++")) == false);
+}
+
+BOOST_AUTO_TEST_CASE(is_idempotent)
+{
+  UserName once("  Roman   Khasnulin ");
+  UserName twice(once.value());
+  BOOST_CHECK(twice == once);
+}
+
+BOOST_AUTO_TEST_CASE(copy_keeps_value)
+{
+  ArticleName original("Advanced C++");
+  ArticleName copy = original;
+  BOOST_CHECK(copy == original);
+  BOOST_CHECK(copy.value() == "Advanced C++");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
 BOOST_AUTO_TEST_SUITE(tag_tests)
 
 BOOST_AUTO_TEST_CASE(stores_normalized_value)
@@ -173,6 +281,19 @@ BOOST_AUTO_TEST_CASE(throws_on_invalid_label)
   BOOST_CHECK_THROW(Category("   "), std::invalid_argument);
 }
 
+BOOST_AUTO_TEST_CASE(equal_after_normalization)
+{
+  BOOST_CHECK(Category("AI") == Category(" ai "));
+  BOOST_CHECK((Category("ai") == Category("ml")) == false);
+}
+
+BOOST_AUTO_TEST_CASE(less_compares_values)
+{
+  BOOST_CHECK(Category("ai") < Category("ml"));
+  BOOST_CHECK((Category("ml") < Category("ai")) == false);
+  BOOST_CHECK((Category("ai") < Category("AI")) == false);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(difficulty_tests)
@@ -223,8 +344,8 @@ BOOST_AUTO_TEST_SUITE(user_tests)
 BOOST_AUTO_TEST_CASE(constructs_with_name_and_latent)
 {
   Latent latent = makeLatent(0.1);
-  User user("roman", latent);
-  BOOST_CHECK(user.name() == "roman");
+  User user(UserName("roman"), latent);
+  BOOST_CHECK(user.name() == UserName("roman"));
   BOOST_CHECK(user.preferences().empty());
   BOOST_CHECK(isSameLatent(user.latent(), latent));
 }
@@ -232,32 +353,21 @@ BOOST_AUTO_TEST_CASE(constructs_with_name_and_latent)
 BOOST_AUTO_TEST_CASE(default_constructed_is_empty_placeholder)
 {
   User user;
-  BOOST_CHECK(user.name().empty());
+  BOOST_CHECK(user.name().value().empty());
   BOOST_CHECK(user.preferences().empty());
   BOOST_CHECK(isZeroLatent(user.latent()));
 }
 
 BOOST_AUTO_TEST_CASE(add_preference_reports_new_tag)
 {
-  User user("roman", makeLatent(0.1));
+  User user(UserName("roman"), makeLatent(0.1));
   BOOST_CHECK(user.addPreference(Tag("cpp")));
   BOOST_CHECK(user.preferences().size() == 1);
 }
 
-BOOST_AUTO_TEST_CASE(normalizes_name_preserving_case)
-{
-  User user("  Roman   Khasnulin ", makeLatent(0.1));
-  BOOST_CHECK(user.name() == "Roman Khasnulin");
-}
-
-BOOST_AUTO_TEST_CASE(throws_on_invalid_name)
-{
-  BOOST_CHECK_THROW(User("   ", makeLatent(0.1)), std::invalid_argument);
-}
-
 BOOST_AUTO_TEST_CASE(add_preference_ignores_duplicate)
 {
-  User user("roman", makeLatent(0.1));
+  User user(UserName("roman"), makeLatent(0.1));
   user.addPreference(Tag("cpp"));
   BOOST_CHECK(user.addPreference(Tag(" CPP ")) == false);
   BOOST_CHECK(user.preferences().size() == 1);
@@ -265,7 +375,7 @@ BOOST_AUTO_TEST_CASE(add_preference_ignores_duplicate)
 
 BOOST_AUTO_TEST_CASE(preferences_are_sorted)
 {
-  User user("roman", makeLatent(0.1));
+  User user(UserName("roman"), makeLatent(0.1));
   user.addPreference(Tag("rust"));
   user.addPreference(Tag("cpp"));
   user.addPreference(Tag("go"));
@@ -275,7 +385,7 @@ BOOST_AUTO_TEST_CASE(preferences_are_sorted)
 
 BOOST_AUTO_TEST_CASE(latent_is_mutable)
 {
-  User user("roman", makeLatent(0.1));
+  User user(UserName("roman"), makeLatent(0.1));
   user.latent().v[0] = 0.5;
   const User &cref = user;
   BOOST_CHECK(cref.latent().v[0] == 0.5);
@@ -283,11 +393,12 @@ BOOST_AUTO_TEST_CASE(latent_is_mutable)
 
 BOOST_AUTO_TEST_CASE(copy_is_independent)
 {
-  User original("roman", makeLatent(0.1));
+  User original(UserName("roman"), makeLatent(0.1));
   original.addPreference(Tag("cpp"));
   User copy = original;
   copy.addPreference(Tag("go"));
   copy.latent().v[0] = 0.9;
+  BOOST_CHECK(copy.name() == original.name());
   BOOST_CHECK(original.preferences().size() == 1);
   BOOST_CHECK(copy.preferences().size() == 2);
   BOOST_CHECK(isSameLatent(original.latent(), makeLatent(0.1)));
@@ -300,9 +411,9 @@ BOOST_AUTO_TEST_SUITE(article_tests)
 BOOST_AUTO_TEST_CASE(constructs_with_all_fields)
 {
   Latent latent = makeLatent(0.2);
-  Article article("Advanced C++", Category("cpp"), Difficulty::advanced, latent);
-  BOOST_CHECK(article.name() == "Advanced C++");
-  BOOST_CHECK(article.category().value() == "cpp");
+  Article article(ArticleName("Advanced C++"), Category("cpp"), Difficulty::advanced, latent);
+  BOOST_CHECK(article.name() == ArticleName("Advanced C++"));
+  BOOST_CHECK(article.category() == Category("cpp"));
   BOOST_CHECK(article.difficulty() == Difficulty::advanced);
   BOOST_CHECK(article.tags().empty());
   BOOST_CHECK(isSameLatent(article.latent(), latent));
@@ -311,7 +422,8 @@ BOOST_AUTO_TEST_CASE(constructs_with_all_fields)
 BOOST_AUTO_TEST_CASE(default_constructed_is_empty_placeholder)
 {
   Article article;
-  BOOST_CHECK(article.name().empty());
+  BOOST_CHECK(article.name().value().empty());
+  BOOST_CHECK(article.category().value().empty());
   BOOST_CHECK(article.difficulty() == Difficulty::beginner);
   BOOST_CHECK(article.tags().empty());
   BOOST_CHECK(isZeroLatent(article.latent()));
@@ -319,7 +431,7 @@ BOOST_AUTO_TEST_CASE(default_constructed_is_empty_placeholder)
 
 BOOST_AUTO_TEST_CASE(add_tag_reports_new_and_duplicate)
 {
-  Article article("Advanced C++", Category("cpp"), Difficulty::advanced, makeLatent(0.2));
+  Article article(ArticleName("Advanced C++"), Category("cpp"), Difficulty::advanced, makeLatent(0.2));
   BOOST_CHECK(article.addTag(Tag("templates")));
   BOOST_CHECK(article.addTag(Tag("Templates")) == false);
   BOOST_CHECK(article.tags().size() == 1);
@@ -327,7 +439,7 @@ BOOST_AUTO_TEST_CASE(add_tag_reports_new_and_duplicate)
 
 BOOST_AUTO_TEST_CASE(tags_are_sorted)
 {
-  Article article("Advanced C++", Category("cpp"), Difficulty::advanced, makeLatent(0.2));
+  Article article(ArticleName("Advanced C++"), Category("cpp"), Difficulty::advanced, makeLatent(0.2));
   article.addTag(Tag("templates"));
   article.addTag(Tag("cpp"));
   article.addTag(Tag("move-semantics"));
@@ -337,39 +449,14 @@ BOOST_AUTO_TEST_CASE(tags_are_sorted)
 
 BOOST_AUTO_TEST_CASE(copy_is_independent)
 {
-  Article original("Advanced C++", Category("cpp"), Difficulty::advanced, makeLatent(0.2));
+  Article original(ArticleName("Advanced C++"), Category("cpp"), Difficulty::advanced, makeLatent(0.2));
   original.addTag(Tag("cpp"));
   Article copy = original;
   copy.addTag(Tag("templates"));
+  BOOST_CHECK(copy.name() == original.name());
+  BOOST_CHECK(copy.category() == original.category());
   BOOST_CHECK(original.tags().size() == 1);
   BOOST_CHECK(copy.tags().size() == 2);
-  BOOST_CHECK(copy.category().value() == "cpp");
-}
-BOOST_AUTO_TEST_CASE(normalizes_name_preserving_case)
-{
-  Article article("  Advanced   C++ ", Category("cpp"), Difficulty::advanced, makeLatent(0.2));
-  BOOST_CHECK(article.name() == "Advanced C++");
-}
-
-BOOST_AUTO_TEST_CASE(throws_on_invalid_name)
-{
-  BOOST_CHECK_THROW(Article("\"quoted\"", Category("cpp"), Difficulty::advanced, makeLatent(0.2)),
-                    std::invalid_argument);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
-BOOST_AUTO_TEST_SUITE(normalize_text_tests)
-
-BOOST_AUTO_TEST_CASE(preserves_case)
-{
-  BOOST_CHECK(normalizeText("  Advanced   C++ ") == "Advanced C++");
-}
-
-BOOST_AUTO_TEST_CASE(throws_on_invalid_input)
-{
-  BOOST_CHECK_THROW(normalizeText("   "), std::invalid_argument);
-  BOOST_CHECK_THROW(normalizeText("c\"pp"), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

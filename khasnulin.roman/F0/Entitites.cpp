@@ -2,6 +2,7 @@
 #include <cctype>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 khasnulin::Category::Category(const std::string &category)
 {
@@ -91,7 +92,7 @@ khasnulin::Article::Article():
 khasnulin::Article::Article(const ArticleName &name, const Category &category, const Difficulty &difficulty,
                             const Latent &latent):
     name_(name),
-    category_(category.value()),
+    category_(category),
     difficulty_(difficulty),
     tags_(),
     latent_(latent)
@@ -222,3 +223,22 @@ bool khasnulin::isDifficultyName(const std::string &normalized) noexcept
   return normalized == toString(Difficulty::beginner) || normalized == toString(Difficulty::intermediate) ||
          normalized == toString(Difficulty::advanced);
 }
+
+template < class Kind >
+khasnulin::Name< Kind >::Name(const std::string &name):
+    value_(normalizeText(name))
+{
+}
+
+template < class Kind > const std::string &khasnulin::Name< Kind >::value() const noexcept
+{
+  return value_;
+}
+
+template < class Kind > bool khasnulin::Name< Kind >::operator==(const Name &rhs) const noexcept
+{
+  return value_ == rhs.value_;
+}
+
+template class khasnulin::Name< khasnulin::UserNameKind >;
+template class khasnulin::Name< khasnulin::ArticleNameKind >;
