@@ -5,6 +5,8 @@
 #include "Graph.hpp"
 #include "RefCountIndex.hpp"
 #include "Repo.hpp"
+#include <cassert>
+#include <cstddef>
 #include <string>
 
 namespace khasnulin
@@ -79,38 +81,64 @@ namespace khasnulin
   template < class Learn >
   bool Storage::rate(const UserName &user, const ArticleName &article, const Rating &rating, Learn learn)
   {
-    return false;
+    Article *art = articles_.find(article);
+    User *us = users_.find(user);
+    if (!art || !us)
+    {
+      return false;
+    }
+    ratings_.rate(us->name().value(), art->name().value(), rating);
+    learn(us->latent(), art->latent(), rating);
+    return true;
   }
 
-  // для несуществующей сущности в обходах рейтингов и счётчиках (f не вызывается, счётчик 0)
-  // F(const User&);
   template < class F > F Storage::traverseUsers(F f) const
   {
-    return f;
+    return users_.traverse(f);
   }
+
   // F(const Article&);
   template < class F > F Storage::traverseArticles(F f) const
   {
-    return f;
+    return articles_.traverse(f);
   }
+
   // F(const Tag &, count_type)
   template < class F > F Storage::traverseTags(F f) const
   {
-    return f;
+    return tagsIndex_.traverse(f);
   }
+
   // F(const Category&, count_type);
   template < class F > F Storage::traverseCategories(F f) const
   {
-    return f;
+    return articles_.traverseCategories(f);
   }
-  // F(const Article&, const Rating&);
+
+  // F(const Article&, const Rating&);  f(const ArticleKey &article, const Weight &rating)
   template < class F > F Storage::traverseUserRatings(const UserName &user, F f) const
   {
+
+    ratings_.traverseUserRatings(user.value(),
+                                 [&](const std::string &key, const Rating &rating)
+                                 {
+                                   const Article *art = articles_.find(ArticleName(key));
+                                   assert(art != nullptr);
+                                   return f(*art, rating);
+                                 });
     return f;
   }
+
   // F(const User&, const Rating&);
   template < class F > F Storage::traverseArticleRatings(const ArticleName &article, F f) const
   {
+    ratings_.traverseArticleRatings(article.value(),
+                                    [&](const std::string &key, const Rating &rating)
+                                    {
+                                      const User *us = users_.find(UserName(key));
+                                      assert(us != nullptr);
+                                      return f(*us, rating);
+                                    });
     return f;
   }
 }

@@ -1,96 +1,130 @@
 #include "Storage.hpp"
+#include "Entities.hpp"
 
 bool khasnulin::Storage::addUser(const UserName &user, const Latent &latent)
 {
-  (void)user;
-  (void)latent;
-  return false;
+  return users_.add(user, latent);
 }
 
 bool khasnulin::Storage::addArticle(const ArticleName &article, const Category &category,
                                     const Difficulty &difficulty, const Latent &latent)
 {
-  (void)article;
-  (void)category;
-  (void)difficulty;
-  (void)latent;
-  return false;
+  return articles_.add(article, category, difficulty, latent);
 }
 
-// false только если пользователя нет. Повторный тег — не ошибка, счётчик
-// тега при этом не растёт.
 bool khasnulin::Storage::addPreference(const UserName &user, const Tag &tag)
 {
-  (void)user;
-  (void)tag;
-  return false;
+  User *us = users_.find(user);
+  if (us == nullptr)
+  {
+    return false;
+  }
+  if (us->preferences().find(tag) != us->preferences().end())
+  {
+    return true;
+  }
+  tagsIndex_.acquire(tag);
+  try
+  {
+    us->addPreference(tag);
+  }
+  catch (...)
+  {
+    tagsIndex_.release(tag);
+    throw;
+  }
+  return true;
 }
 
-// false, если статьи нет. Аналогично addPreference
 bool khasnulin::Storage::addArticleTag(const ArticleName &article, const Tag &tag)
 {
-  (void)article;
-  (void)tag;
-  return false;
+  Article *art = articles_.find(article);
+  if (art == nullptr)
+  {
+    return false;
+  }
+  if (art->tags().find(tag) != art->tags().end())
+  {
+    return true;
+  }
+  tagsIndex_.acquire(tag);
+  try
+  {
+    art->addTag(tag);
+  }
+  catch (...)
+  {
+    tagsIndex_.release(tag);
+    throw;
+  }
+  return true;
 }
 
-// false, если юзера нет. Каскадно удаляет пользователя (и чистит его ссылки на теги)
 bool khasnulin::Storage::eraseUser(const UserName &user)
 {
-  (void)user;
-  return false;
+  User *us = users_.find(user);
+  if (us == nullptr)
+  {
+    return false;
+  }
+  ratings_.eraseUser(user.value());
+  us->preferences().traverseLNR([&](TagSet::const_iter::reference val) { tagsIndex_.release(val.first); });
+  users_.erase(user);
+  return true;
 }
 
-// false, если артикля нет. Каскадно удаляет статью (и чистит её ссылки на теги). Очистка категорий на
-// articleRepo
 bool khasnulin::Storage::eraseArticle(const ArticleName &article)
 {
-  (void)article;
-  return false;
+  Article *art = articles_.find(article);
+  if (art == nullptr)
+  {
+    return false;
+  }
+  ratings_.eraseArticle(article.value());
+  art->tags().traverseLNR([&](TagSet::const_iter::reference val) { tagsIndex_.release(val.first); });
+  articles_.erase(article);
+
+  return true;
 }
 
 void khasnulin::Storage::clear()
 {
+  users_.clear();
+  articles_.clear();
+  ratings_.clear();
+  tagsIndex_.clear();
 }
 
 void khasnulin::Storage::swap(Storage &rhs) noexcept
 {
-  (void)rhs;
+  users_.swap(rhs.users_);
+  articles_.swap(rhs.articles_);
+  ratings_.swap(rhs.ratings_);
+  tagsIndex_.swap(rhs.tagsIndex_);
 }
 
-const typename ::khasnulin::User *khasnulin::Storage::findUser(const UserName &user) const
+const typename khasnulin::User *khasnulin::Storage::findUser(const UserName &user) const
 {
-  (void)user;
-
-  return nullptr;
+  return users_.find(user);
 }
 
-const typename ::khasnulin::Article *khasnulin::Storage::findArticle(const ArticleName &article) const
+const typename khasnulin::Article *khasnulin::Storage::findArticle(const ArticleName &article) const
 {
-  (void)article;
-
-  return nullptr;
+  return articles_.find(article);
 }
 
 typename khasnulin::Storage::count_type khasnulin::Storage::userRatingsCount(const UserName &user) const
 {
-  (void)user;
-
-  return 0;
+  return ratings_.userRatingsCount(user.value());
 }
 
 typename khasnulin::Storage::count_type
 khasnulin::Storage::articleRatingsCount(const ArticleName &article) const
 {
-  (void)article;
-
-  return 0;
+  return ratings_.articleRatingsCount(article.value());
 }
 
 bool khasnulin::Storage::hasRating(const UserName &user, const ArticleName &article) const
 {
-  (void)user;
-  (void)article;
-
-  return false;
+  return ratings_.hasRating(user.value(), article.value());
 }
