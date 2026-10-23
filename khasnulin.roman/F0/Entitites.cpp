@@ -19,6 +19,16 @@ const std::string &khasnulin::Category::value() const noexcept
   return category_;
 }
 
+bool khasnulin::Category::operator<(const Category &rhs) const noexcept
+{
+  return category_ < rhs.category_;
+}
+
+bool khasnulin::Category::operator==(const Category &rhs) const noexcept
+{
+  return category_ == rhs.category_;
+}
+
 khasnulin::Tag::Tag(const std::string &tag):
     tag_(normalizeLabel(tag))
 {
