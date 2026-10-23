@@ -250,5 +250,10 @@ template < class Kind > bool khasnulin::Name< Kind >::operator==(const Name &rhs
   return value_ == rhs.value_;
 }
 
+template < class Kind > bool khasnulin::Name< Kind >::operator<(const Name &rhs) const noexcept
+{
+  return value_ < rhs.value_;
+}
+
 template class khasnulin::Name< khasnulin::UserNameKind >;
 template class khasnulin::Name< khasnulin::ArticleNameKind >;

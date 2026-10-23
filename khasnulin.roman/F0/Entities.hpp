@@ -59,6 +59,7 @@ namespace khasnulin
     const std::string &value() const noexcept;
 
     bool operator==(const Name &rhs) const noexcept;
+    bool operator<(const Name &rhs) const noexcept;
 
   private:
     Name() = default;
