@@ -57,6 +57,7 @@ namespace khasnulin
     // Конструктор по умолчанию только для HashTable контейнера.
     User();
 
+    // может бросить invalid argument на name
     User(const std::string &name, const Latent &latent);
 
     const std::string &name() const noexcept;
@@ -80,6 +81,7 @@ namespace khasnulin
     // категория, и category() вернёт невалидную Category
     Article();
 
+    // может бросить invalid argument на name, category, difficulty
     Article(const std::string &name, const Category &category, const Difficulty &difficulty,
             const Latent &latent);
 
@@ -109,8 +111,11 @@ namespace khasnulin
   // нарушено -- бросаем std::invalid_argument
   std::string normalizeLabel(const std::string &label);
 
-  // нормализует raw и сверяет по спец. значениям difficulty, если ничего не подошло -- бросает std::invalid
-  // argument
+  // то же, что и normilized label, но не приводит в lowercase
+  std::string normalizeText(const std::string &text);
+
+  // нормализует raw и сверяет по спец. значениям difficulty, если ничего не подошло -- бросает
+  // std::invalid argument
   Difficulty parseDifficulty(const std::string &raw);
 
   // Перевод из difficulty в строку. Варианты строк: "beginner" / "intermediate" / "advanced"

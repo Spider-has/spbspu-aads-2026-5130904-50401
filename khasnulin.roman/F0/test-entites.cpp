@@ -244,6 +244,17 @@ BOOST_AUTO_TEST_CASE(add_preference_reports_new_tag)
   BOOST_CHECK(user.preferences().size() == 1);
 }
 
+BOOST_AUTO_TEST_CASE(normalizes_name_preserving_case)
+{
+  User user("  Roman   Khasnulin ", makeLatent(0.1));
+  BOOST_CHECK(user.name() == "Roman Khasnulin");
+}
+
+BOOST_AUTO_TEST_CASE(throws_on_invalid_name)
+{
+  BOOST_CHECK_THROW(User("   ", makeLatent(0.1)), std::invalid_argument);
+}
+
 BOOST_AUTO_TEST_CASE(add_preference_ignores_duplicate)
 {
   User user("roman", makeLatent(0.1));
@@ -333,6 +344,32 @@ BOOST_AUTO_TEST_CASE(copy_is_independent)
   BOOST_CHECK(original.tags().size() == 1);
   BOOST_CHECK(copy.tags().size() == 2);
   BOOST_CHECK(copy.category().value() == "cpp");
+}
+BOOST_AUTO_TEST_CASE(normalizes_name_preserving_case)
+{
+  Article article("  Advanced   C++ ", Category("cpp"), Difficulty::advanced, makeLatent(0.2));
+  BOOST_CHECK(article.name() == "Advanced C++");
+}
+
+BOOST_AUTO_TEST_CASE(throws_on_invalid_name)
+{
+  BOOST_CHECK_THROW(Article("\"quoted\"", Category("cpp"), Difficulty::advanced, makeLatent(0.2)),
+                    std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(normalize_text_tests)
+
+BOOST_AUTO_TEST_CASE(preserves_case)
+{
+  BOOST_CHECK(normalizeText("  Advanced   C++ ") == "Advanced C++");
+}
+
+BOOST_AUTO_TEST_CASE(throws_on_invalid_input)
+{
+  BOOST_CHECK_THROW(normalizeText("   "), std::invalid_argument);
+  BOOST_CHECK_THROW(normalizeText("c\"pp"), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
