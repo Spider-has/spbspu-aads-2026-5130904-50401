@@ -257,3 +257,22 @@ template < class Kind > bool khasnulin::Name< Kind >::operator<(const Name &rhs)
 
 template class khasnulin::Name< khasnulin::UserNameKind >;
 template class khasnulin::Name< khasnulin::ArticleNameKind >;
+
+khasnulin::Rating::Rating(int rating)
+{
+  if (rating < minRating || rating > maxRating)
+  {
+    throw std::invalid_argument("rating must be strictly between 1 and 10");
+  }
+  rating_ = rating;
+}
+
+int khasnulin::Rating::value() const noexcept
+{
+  return rating_;
+}
+
+bool khasnulin::Rating::operator==(const Rating &rhs) const noexcept
+{
+  return rating_ == rhs.rating_;
+}
