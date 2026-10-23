@@ -18,13 +18,6 @@ const std::string &khasnulin::Category::value() const noexcept
   return category_;
 }
 
-khasnulin::Category khasnulin::Category::fromNormalized(const std::string &normalized)
-{
-  Category result;
-  result.category_ = normalized;
-  return result;
-}
-
 khasnulin::Tag::Tag(const std::string &tag):
     tag_(normalizeLabel(tag))
 {
@@ -52,23 +45,23 @@ khasnulin::User::User():
 {
 }
 
-khasnulin::User::User(const std::string &name, const Latent &latent):
-    name_(normalizeText(name)),
+khasnulin::User::User(const UserName &name, const Latent &latent):
+    name_(name),
     preferences_(),
     latent_(latent)
 {
 }
 
-const std::string &khasnulin::User::name() const noexcept
+const khasnulin::UserName &khasnulin::User::name() const noexcept
 {
   return name_;
 }
 
 bool khasnulin::User::addPreference(const Tag &tag)
 {
-  TagSet::size_type oldS = preferences_.size();
+  TagSet::size_type oldSize = preferences_.size();
   preferences_.insert({tag, true});
-  return oldS < preferences_.size();
+  return oldSize < preferences_.size();
 }
 
 const khasnulin::TagSet &khasnulin::User::preferences() const noexcept
@@ -95,9 +88,9 @@ khasnulin::Article::Article():
 {
 }
 
-khasnulin::Article::Article(const std::string &name, const Category &category, const Difficulty &difficulty,
+khasnulin::Article::Article(const ArticleName &name, const Category &category, const Difficulty &difficulty,
                             const Latent &latent):
-    name_(normalizeText(name)),
+    name_(name),
     category_(category.value()),
     difficulty_(difficulty),
     tags_(),
@@ -105,14 +98,14 @@ khasnulin::Article::Article(const std::string &name, const Category &category, c
 {
 }
 
-const std::string &khasnulin::Article::name() const noexcept
+const khasnulin::ArticleName &khasnulin::Article::name() const noexcept
 {
   return name_;
 }
 
-khasnulin::Category khasnulin::Article::category() const
+const khasnulin::Category &khasnulin::Article::category() const noexcept
 {
-  return Category::fromNormalized(category_);
+  return category_;
 }
 
 khasnulin::Difficulty khasnulin::Article::difficulty() const noexcept
@@ -122,9 +115,9 @@ khasnulin::Difficulty khasnulin::Article::difficulty() const noexcept
 
 bool khasnulin::Article::addTag(const Tag &tag)
 {
-  TagSet::size_type oldS = tags_.size();
+  TagSet::size_type oldSize = tags_.size();
   tags_.insert({tag, true});
-  return oldS < tags_.size();
+  return oldSize < tags_.size();
 }
 
 const khasnulin::TagSet &khasnulin::Article::tags() const noexcept

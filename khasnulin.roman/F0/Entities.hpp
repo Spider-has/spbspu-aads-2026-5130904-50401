@@ -17,12 +17,16 @@ namespace khasnulin
   class Category
   {
   public:
+    // Нормализует через normalizeLabel и запрещает имена уровней сложности
+    // ("advanced cpp" допустимо, "advanced" — нет). При нарушении бросает std::invalid_argument.
     explicit Category(const std::string &category);
     const std::string &value() const noexcept;
 
+    bool operator<(const Category &rhs) const noexcept;
+    bool operator==(const Category &rhs) const noexcept;
+
   private:
     Category() = default;
-    static Category fromNormalized(const std::string &normalized);
 
     std::string category_;
     friend class Article;
@@ -44,15 +48,24 @@ namespace khasnulin
 
   using TagSet = BSTree< Tag, bool >;
 
+  class User;
+  class Article;
+
   template < class Kind > class Name
   {
   public:
-    // бросает std::invalid_argument, если raw не проходит normalizeText
-    explicit Name(const std::string &raw);
+    // бросает std::invalid_argument, если name не проходит normalizeText
+    explicit Name(const std::string &name);
     const std::string &value() const noexcept;
 
+    bool operator==(const Name &rhs) const noexcept;
+
   private:
+    Name() = default;
+
     std::string value_;
+    friend class User;
+    friend class Article;
   };
 
   struct UserNameKind;
@@ -74,13 +87,15 @@ namespace khasnulin
   class User
   {
   public:
-    // Конструктор по умолчанию только для HashTable контейнера.
+    // Только для HashTable; доменный код такие объекты не создаёт и не читает.
+    // Пустое имя, нулевой латентный вектор, нет предпочтений.
     User();
 
-    // может бросить invalid argument на name
+    // Все аргументы валидны по построению, std::invalid_argument не бросает
+    // (возможен только std::bad_alloc).
     User(const UserName &name, const Latent &latent);
 
-    const std::string &name() const noexcept;
+    const UserName &name() const noexcept;
 
     bool addPreference(const Tag &tag);
     const TagSet &preferences() const noexcept;
@@ -89,7 +104,7 @@ namespace khasnulin
     Latent &latent() noexcept;
 
   private:
-    std::string name_;
+    UserName name_;
     TagSet preferences_;
     Latent latent_;
   };
@@ -97,16 +112,17 @@ namespace khasnulin
   class Article
   {
   public:
-    // только для HashTable; доменный код такие объекты не создаёт и не читает; у такой статьи пустая
-    // категория, и category() вернёт невалидную Category
+    // Только для HashTable; доменный код такие объекты не создаёт и не читает.
+    // Пустое имя, пустая категория, beginner, нулевой латентный вектор, нет тегов.
     Article();
 
-    // может бросить invalid argument на name, category, difficulty
+    // Все аргументы валидны по построению, std::invalid_argument не бросает
+    // (возможен только std::bad_alloc).
     Article(const ArticleName &name, const Category &category, const Difficulty &difficulty,
             const Latent &latent);
 
-    const std::string &name() const noexcept;
-    Category category() const;
+    const ArticleName &name() const noexcept;
+    const Category &category() const noexcept;
     Difficulty difficulty() const noexcept;
 
     bool addTag(const Tag &tag);
@@ -116,8 +132,8 @@ namespace khasnulin
     Latent &latent() noexcept;
 
   private:
-    std::string name_;
-    std::string category_;
+    ArticleName name_;
+    Category category_;
     Difficulty difficulty_;
     TagSet tags_;
     Latent latent_;
