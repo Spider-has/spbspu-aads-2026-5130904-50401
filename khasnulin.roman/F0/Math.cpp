@@ -46,9 +46,43 @@ double khasnulin::cosine(const Latent &v1, const Latent &v2) noexcept
 // возвращает 0.
 double khasnulin::jaccard(const TagSet &t1, const TagSet &t2) noexcept
 {
-  (void)t1;
-  (void)t2;
-  return 0;
+  int common = 0;
+  int total = 0;
+  auto it1 = t1.begin();
+  auto it2 = t2.begin();
+  auto it1_end = t1.end();
+  auto it2_end = t2.end();
+  while (it1 != it1_end && it2 != it2_end)
+  {
+    if ((*it1).first == (*it2).first)
+    {
+      ++common;
+      ++it1;
+      ++it2;
+    }
+    else if ((*it1).first < (*it2).first)
+    {
+      ++it1;
+    }
+    else
+    {
+      ++it2;
+    }
+    ++total;
+  }
+  for (; it1 != it1_end; ++it1)
+  {
+    ++total;
+  }
+  for (; it2 != it2_end; ++it2)
+  {
+    ++total;
+  }
+  if (total == 0)
+  {
+    return 0;
+  }
+  return clip(static_cast< double >(common) / static_cast< double >(total), 0, 1);
 }
 
 double khasnulin::clip(double val, double low, double high) noexcept
