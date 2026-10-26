@@ -1,24 +1,45 @@
 #include "Math.hpp"
+#include "Entities.hpp"
+#include <cassert>
+#include <cmath>
+#include <cstddef>
+
 double khasnulin::vecModule(const Latent &vec) noexcept
 {
-  (void)vec;
-  return 0;
+  static constexpr std::size_t N = latentDimensionCount;
+  double module = 0;
+  for (size_t i = 0; i < N; ++i)
+  {
+    module += vec.v[i] * vec.v[i];
+  }
+  if (module < 0)
+  {
+    module *= -1;
+  }
+  return std::sqrt(module);
 }
 
-// скалярное произведение двух векторов
 double khasnulin::scalarProduct(const Latent &v1, const Latent &v2) noexcept
 {
-  (void)v1;
-  (void)v2;
-  return 0;
+  static constexpr std::size_t N = latentDimensionCount;
+  double prod = 0;
+  for (size_t i = 0; i < N; ++i)
+  {
+    prod += v1.v[i] * v2.v[i];
+  }
+  return prod;
 }
 
-// косинус угла между векторами от [-1; 1]. Если один из векторов нулевой -- возвращает 0.
 double khasnulin::cosine(const Latent &v1, const Latent &v2) noexcept
 {
-  (void)v1;
-  (void)v2;
-  return 0;
+  double prod = scalarProduct(v1, v2);
+  double v1_len = vecModule(v1);
+  double v2_len = vecModule(v2);
+  if (v1_len == 0 || v2_len == 0)
+  {
+    return 0;
+  }
+  return clip((prod / v1_len) / v2_len, -1, 1);
 }
 
 // Сходство Жаккара для двух наборов тегов. Возвращает [0; 1], если одно из переданных множеств пустое --
@@ -30,24 +51,28 @@ double khasnulin::jaccard(const TagSet &t1, const TagSet &t2) noexcept
   return 0;
 }
 
-// если val выходит за low или high -- возвращает val приведенный к границе. low <= high контракт
 double khasnulin::clip(double val, double low, double high) noexcept
 {
-  (void)val;
-  (void)low;
-  (void)high;
-  return 0;
+  assert(low <= high);
+  if (val > high)
+  {
+    return high;
+  }
+  if (val < low)
+  {
+    return low;
+  }
+  return val;
 }
 
-// переводит val к интервалу между newLow и newHigh вместо oldLow и oldHigh. oldLow < oldHigh и newLow <
-// newHigh контракт и oldLow <= val <= oldHigh.
 double khasnulin::toInterval(double val, double oldLow, double oldHigh, double newLow,
                              double newHigh) noexcept
 {
-  (void)val;
-  (void)oldHigh;
-  (void)oldLow;
-  (void)newHigh;
-  (void)newLow;
-  return 0;
+  assert(val >= oldLow && val <= oldHigh);
+  assert(oldLow < oldHigh);
+  assert(newLow < newHigh);
+  double lamda = (newHigh - newLow) / (oldHigh - oldLow);
+  double beta = newLow - (lamda * oldLow);
+  double result = (lamda * val) + beta;
+  return clip(result, newLow, newHigh);
 }
