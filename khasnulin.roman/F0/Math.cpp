@@ -6,17 +6,7 @@
 
 double khasnulin::vecModule(const Latent &vec) noexcept
 {
-  static constexpr std::size_t N = latentDimensionCount;
-  double module = 0;
-  for (size_t i = 0; i < N; ++i)
-  {
-    module += vec.v[i] * vec.v[i];
-  }
-  if (module < 0)
-  {
-    module *= -1;
-  }
-  return std::sqrt(module);
+  return std::sqrt(scalarProduct(vec, vec));
 }
 
 double khasnulin::scalarProduct(const Latent &v1, const Latent &v2) noexcept
@@ -42,12 +32,10 @@ double khasnulin::cosine(const Latent &v1, const Latent &v2) noexcept
   return clip((prod / v1_len) / v2_len, -1, 1);
 }
 
-// Сходство Жаккара для двух наборов тегов. Возвращает [0; 1], если одно из переданных множеств пустое --
-// возвращает 0.
 double khasnulin::jaccard(const TagSet &t1, const TagSet &t2) noexcept
 {
-  int common = 0;
-  int total = 0;
+  TagSet::size_type common = 0;
+  TagSet::size_type total = t1.size() + t2.size();
   auto it1 = t1.begin();
   auto it2 = t2.begin();
   auto it1_end = t1.end();
@@ -68,21 +56,13 @@ double khasnulin::jaccard(const TagSet &t1, const TagSet &t2) noexcept
     {
       ++it2;
     }
-    ++total;
   }
-  for (; it1 != it1_end; ++it1)
-  {
-    ++total;
-  }
-  for (; it2 != it2_end; ++it2)
-  {
-    ++total;
-  }
+  total -= common;
   if (total == 0)
   {
     return 0;
   }
-  return clip(static_cast< double >(common) / static_cast< double >(total), 0, 1);
+  return static_cast< double >(common) / static_cast< double >(total);
 }
 
 double khasnulin::clip(double val, double low, double high) noexcept
@@ -105,8 +85,8 @@ double khasnulin::toInterval(double val, double oldLow, double oldHigh, double n
   assert(val >= oldLow && val <= oldHigh);
   assert(oldLow < oldHigh);
   assert(newLow < newHigh);
-  double lamda = (newHigh - newLow) / (oldHigh - oldLow);
-  double beta = newLow - (lamda * oldLow);
-  double result = (lamda * val) + beta;
+  double lambda = (newHigh - newLow) / (oldHigh - oldLow);
+  double beta = newLow - (lambda * oldLow);
+  double result = (lambda * val) + beta;
   return clip(result, newLow, newHigh);
 }
