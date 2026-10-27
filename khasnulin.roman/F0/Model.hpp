@@ -9,8 +9,6 @@ namespace khasnulin
 {
 
   constexpr std::uint64_t offsetBasisFNV1a = 0xcbf29ce484222325;
-  constexpr std::uint64_t primeFNV1a = 1099511628211;
-  constexpr std::uint64_t splitmixIncrement = 0x9E3779B97F4A7C15;
 
   constexpr unsigned char userPrefix = 'u';
   constexpr unsigned char articlePrefix = 'a';
