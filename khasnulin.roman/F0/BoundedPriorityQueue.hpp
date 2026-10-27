@@ -5,7 +5,7 @@
 #include "Vector.hpp"
 #include <cassert>
 #include <cstddef>
-#include <iostream>
+#include <utility>
 
 namespace khasnulin
 {
@@ -60,8 +60,8 @@ namespace khasnulin
     }
     if (heap_.valueComp()(val, heap_.top()))
     {
-      heap_.pop();
       heap_.push(std::forward< Val >(val));
+      heap_.pop();
       return true;
     }
     return false;
@@ -111,16 +111,16 @@ namespace khasnulin
       return;
     }
     Vector< T > vec(heap_.size());
-    size_t i = 0;
+    size_t j = 0;
     while (!heap_.empty())
     {
-      vec[i] = (heap_.top());
+      vec[j] = heap_.top();
       heap_.pop();
-      ++i;
+      ++j;
     }
-    for (std::ptrdiff_t i = vec.getSize() - 1; i >= 0; --i)
+    for (size_type i = vec.getSize(); i > 0; --i)
     {
-      f(vec[i]);
+      f(vec[i - 1]);
     }
   }
 }

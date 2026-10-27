@@ -3,7 +3,6 @@
 #include <boost/test/unit_test.hpp>
 #include <cstddef>
 #include <cstdlib>
-#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
