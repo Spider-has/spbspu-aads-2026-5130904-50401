@@ -58,14 +58,13 @@ khasnulin::Recommender::recommend(const Storage &storage, const UserName &name,
   storage.traverseArticles(
       [&](const Article &article)
       {
-        bool isRated = storage.hasRating(user->name(), article.name());
-        bool isFiltered = !isRated && articleFilter.matches(article);
-        if (!isRated && isFiltered)
+        if (!articleFilter.matches(article) || storage.hasRating(name, article.name()))
         {
-          double score = scorer_.userArticleScore(user->latent(), user->preferences(), userRatings,
-                                                  article.latent(), article.tags());
-          queue.suggest(Recommendation{&article, score});
+          return;
         }
+        double score = scorer_.userArticleScore(user->latent(), user->preferences(), userRatings,
+                                                article.latent(), article.tags());
+        queue.suggest(Recommendation{&article, score});
       });
   Vector< Recommendation > result;
   result.reserve(queue.size());
