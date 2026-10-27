@@ -115,3 +115,51 @@ void khasnulin::Learner::operator()(Latent &user, Latent &article, const Rating 
     sgdStep(user, article, target);
   }
 }
+
+khasnulin::Recommender::Recommender(double shrinkage) noexcept
+{
+  (void)shrinkage;
+}
+
+// доверие к сигналу векторов при ratingCount оценках, [0, 1)
+double khasnulin::Recommender::confidence(std::size_t ratingCount) const noexcept
+{
+  (void)ratingCount;
+  return 0;
+}
+
+// коэффициент рекомендуемости  статьи для этого пользователя [0, 1] только на основе латентных векторов
+double khasnulin::Recommender::mfSignal(const Latent &user, const Latent &article) noexcept
+{
+  (void)user;
+  (void)article;
+  return 0;
+}
+
+// возвращает коэффициент [0; 1] -- то, насколько статья кандидат подходит пользователю
+double khasnulin::Recommender::userArticleScore(const Latent &user, const TagSet &preferences,
+                                                std::size_t userRatingCount, const Latent &article,
+                                                const TagSet &tags) const noexcept
+{
+  (void)user;
+  (void)preferences;
+  (void)userRatingCount;
+  (void)article;
+  (void)tags;
+  return 0;
+}
+
+// возвращает коэффициент [0; 1] -- то, насколько две статьи схожи
+double khasnulin::Recommender::articleArticleScore(const Latent &art1, const TagSet &tags1,
+                                                   std::size_t art1RatingsCount, const Latent &art2,
+                                                   const TagSet &tags2,
+                                                   std::size_t art2RatingsCount) const noexcept
+{
+  (void)art1;
+  (void)tags1;
+  (void)art1RatingsCount;
+  (void)art2;
+  (void)tags2;
+  (void)art2RatingsCount;
+  return 0;
+}
