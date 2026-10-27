@@ -15,6 +15,9 @@ namespace khasnulin
 
   constexpr double targetScaleMin = -1.0;
 
+  constexpr double scoreKoefScaleMin = 0.0;
+  constexpr double scoreKoefScaleMax = 1.0;
+
   // Шаг fnv1a для 1 байта
   std::uint64_t fnv1aStep(std::uint64_t hash, unsigned char byte) noexcept;
 

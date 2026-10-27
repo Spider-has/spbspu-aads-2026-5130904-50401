@@ -116,24 +116,24 @@ void khasnulin::Learner::operator()(Latent &user, Latent &article, const Rating 
   }
 }
 
-khasnulin::Recommender::Recommender(double shrinkage) noexcept
+khasnulin::Recommender::Recommender(double shrinkage) noexcept:
+    shrinkage_(shrinkage)
 {
-  (void)shrinkage;
+  assert(shrinkage > 0);
 }
 
 // доверие к сигналу векторов при ratingCount оценках, [0, 1)
 double khasnulin::Recommender::confidence(std::size_t ratingCount) const noexcept
 {
-  (void)ratingCount;
-  return 0;
+  return static_cast< double >(ratingCount) / (static_cast< double >(ratingCount) + shrinkage_);
 }
 
 // коэффициент рекомендуемости  статьи для этого пользователя [0, 1] только на основе латентных векторов
 double khasnulin::Recommender::mfSignal(const Latent &user, const Latent &article) noexcept
 {
-  (void)user;
-  (void)article;
-  return 0;
+  double koef = scalarProduct(user, article);
+  koef = clip(koef, targetScaleMin, targetScaleMax);
+  return toInterval(koef, targetScaleMin, targetScaleMax, scoreKoefScaleMin, scoreKoefScaleMax);
 }
 
 // возвращает коэффициент [0; 1] -- то, насколько статья кандидат подходит пользователю
@@ -141,12 +141,8 @@ double khasnulin::Recommender::userArticleScore(const Latent &user, const TagSet
                                                 std::size_t userRatingCount, const Latent &article,
                                                 const TagSet &tags) const noexcept
 {
-  (void)user;
-  (void)preferences;
-  (void)userRatingCount;
-  (void)article;
-  (void)tags;
-  return 0;
+  double conf = confidence(userRatingCount);
+  return (mfSignal(user, article) * conf) + ((1 - conf) * jaccard(preferences, tags));
 }
 
 // возвращает коэффициент [0; 1] -- то, насколько две статьи схожи
@@ -155,11 +151,8 @@ double khasnulin::Recommender::articleArticleScore(const Latent &art1, const Tag
                                                    const TagSet &tags2,
                                                    std::size_t art2RatingsCount) const noexcept
 {
-  (void)art1;
-  (void)tags1;
-  (void)art1RatingsCount;
-  (void)art2;
-  (void)tags2;
-  (void)art2RatingsCount;
-  return 0;
+  std::size_t minCount = art1RatingsCount < art2RatingsCount ? art1RatingsCount : art2RatingsCount;
+  double conf = confidence(minCount);
+  double normilizeCosine = toInterval(cosine(art1, art2), -1.0, 1.0, scoreKoefScaleMin, scoreKoefScaleMax);
+  return (normilizeCosine * conf) + ((1 - conf) * jaccard(tags1, tags2));
 }
