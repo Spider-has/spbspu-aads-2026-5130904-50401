@@ -3,7 +3,9 @@
 
 #include "MaxHeap.hpp"
 #include "Vector.hpp"
+#include <cassert>
 #include <cstddef>
+#include <iostream>
 
 namespace khasnulin
 {
@@ -27,62 +29,99 @@ namespace khasnulin
     size_type size() const noexcept;
     bool empty() const noexcept;
 
-    void clear() noexcept;
+    void clear();
 
+    // F(const T& val)
     template < class F > void traverseAndClear(F f);
 
   private:
+    template < class Val > bool commonSuggest(Val &&val);
+
     size_type limit_;
     MaxHeap< T, Compare > heap_;
   };
 
   template < class T, class Compare >
-  BoundedPriorityQueue< T, Compare >::BoundedPriorityQueue(size_type limit, const Compare &better)
+  BoundedPriorityQueue< T, Compare >::BoundedPriorityQueue(size_type limit, const Compare &better):
+      limit_(limit),
+      heap_(better)
   {
-    (void)limit;
-    (void)better;
+    assert(limit > 0);
+  }
+
+  template < class T, class Compare >
+  template < class Val >
+  bool BoundedPriorityQueue< T, Compare >::commonSuggest(Val &&val)
+  {
+    if (heap_.size() < limit_)
+    {
+      heap_.push(std::forward< Val >(val));
+      return true;
+    }
+    if (heap_.valueComp()(val, heap_.top()))
+    {
+      heap_.pop();
+      heap_.push(std::forward< Val >(val));
+      return true;
+    }
+    return false;
   }
 
   template < class T, class Compare > bool BoundedPriorityQueue< T, Compare >::suggest(const T &val)
   {
-    (void)val;
-    return false;
+    return commonSuggest(val);
   }
 
   template < class T, class Compare > bool BoundedPriorityQueue< T, Compare >::suggest(T &&val)
   {
-    (void)val;
-    return false;
+    return commonSuggest(std::move(val));
   }
 
   template < class T, class Compare >
   typename BoundedPriorityQueue< T, Compare >::size_type
   BoundedPriorityQueue< T, Compare >::limit() const noexcept
   {
-    return 0;
+    return limit_;
   }
 
   template < class T, class Compare >
   typename BoundedPriorityQueue< T, Compare >::size_type
   BoundedPriorityQueue< T, Compare >::size() const noexcept
   {
-    return 0;
+    return heap_.size();
   }
 
   template < class T, class Compare > bool BoundedPriorityQueue< T, Compare >::empty() const noexcept
   {
-    return true;
+    return heap_.empty();
   }
 
-  template < class T, class Compare > void BoundedPriorityQueue< T, Compare >::clear() noexcept
+  template < class T, class Compare > void BoundedPriorityQueue< T, Compare >::clear()
   {
+    MaxHeap< T, Compare > temp(heap_.valueComp());
+    heap_.swap(temp);
   }
 
   template < class T, class Compare >
   template < class F >
   void BoundedPriorityQueue< T, Compare >::traverseAndClear(F f)
   {
-    (void)f;
+    if (empty())
+    {
+      return;
+    }
+    Vector< T > vec(heap_.size());
+    size_t i = 0;
+    while (!heap_.empty())
+    {
+      vec[i] = (heap_.top());
+      heap_.pop();
+      ++i;
+    }
+    for (std::ptrdiff_t i = vec.getSize() - 1; i >= 0; --i)
+    {
+      f(vec[i]);
+    }
   }
 }
 
