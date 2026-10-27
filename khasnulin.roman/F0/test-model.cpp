@@ -520,3 +520,247 @@ BOOST_AUTO_TEST_CASE(repeated_rating_converges_to_target_minus_regularization)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+using namespace khasnulin;
+
+namespace
+{
+
+  Latent twoComponentLatent(double first, double second)
+  {
+    Latent latent{};
+    latent.v[0] = first;
+    latent.v[1] = second;
+    return latent;
+  }
+
+  TagSet makeTags(const std::vector< std::string > &values)
+  {
+    TagSet tags;
+    for (const std::string &value : values)
+    {
+      tags.insert(TagSet::value_type(Tag(value), true));
+    }
+    return tags;
+  }
+
+  TagSet preferenceSample()
+  {
+    return makeTags({"cpp", "backend", "async"});
+  }
+
+  TagSet articleTagSample()
+  {
+    return makeTags({"cpp", "templates", "async", "memory"});
+  }
+}
+
+BOOST_AUTO_TEST_SUITE(confidence_tests)
+
+BOOST_AUTO_TEST_CASE(default_shrinkage_matches_design)
+{
+  BOOST_CHECK(Recommender::defaultShrinkage == 5.0);
+}
+
+BOOST_AUTO_TEST_CASE(matches_design_values)
+{
+  Recommender recommender;
+  BOOST_CHECK(recommender.confidence(0) == 0.0);
+  BOOST_CHECK(isClose(recommender.confidence(5), 0.5));
+  BOOST_CHECK(isClose(recommender.confidence(15), 0.75));
+  BOOST_CHECK(isClose(recommender.confidence(1), 1.0 / 6.0));
+}
+
+BOOST_AUTO_TEST_CASE(grows_with_rating_count_and_stays_below_one)
+{
+  Recommender recommender;
+  double previous = recommender.confidence(0);
+  for (std::size_t count = 1; count <= 100; ++count)
+  {
+    double current = recommender.confidence(count);
+    BOOST_CHECK(current > previous);
+    BOOST_CHECK(current < 1.0);
+    previous = current;
+  }
+  BOOST_CHECK(recommender.confidence(1000000) < 1.0);
+}
+
+BOOST_AUTO_TEST_CASE(half_trust_is_reached_at_shrinkage)
+{
+  BOOST_CHECK(isClose(Recommender(1.0).confidence(1), 0.5));
+  BOOST_CHECK(isClose(Recommender(10.0).confidence(10), 0.5));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(mf_signal_tests)
+
+BOOST_AUTO_TEST_CASE(zero_vectors_give_neutral_half)
+{
+  BOOST_CHECK(isClose(Recommender::mfSignal(Latent{}, Latent{}), 0.5));
+}
+
+BOOST_AUTO_TEST_CASE(scale_bounds_map_to_unit_bounds)
+{
+  BOOST_CHECK(isClose(Recommender::mfSignal(firstComponentLatent(1.0), firstComponentLatent(1.0)), 1.0));
+  BOOST_CHECK(isClose(Recommender::mfSignal(firstComponentLatent(1.0), firstComponentLatent(-1.0)), 0.0));
+}
+
+BOOST_AUTO_TEST_CASE(maps_inner_value_linearly)
+{
+  BOOST_CHECK(isClose(Recommender::mfSignal(firstComponentLatent(1.0), firstComponentLatent(0.6)), 0.8));
+  BOOST_CHECK(isClose(Recommender::mfSignal(firstComponentLatent(1.0), firstComponentLatent(-0.6)), 0.2));
+}
+
+BOOST_AUTO_TEST_CASE(clips_prediction_outside_scale)
+{
+  BOOST_CHECK(isClose(Recommender::mfSignal(firstComponentLatent(1.5), firstComponentLatent(2.0)), 1.0));
+  BOOST_CHECK(isClose(Recommender::mfSignal(firstComponentLatent(1.5), firstComponentLatent(-2.0)), 0.0));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(user_article_score_tests)
+
+BOOST_AUTO_TEST_CASE(cold_start_uses_only_tags)
+{
+  Recommender recommender;
+  double score = recommender.userArticleScore(firstComponentLatent(1.0), preferenceSample(), 0,
+                                              firstComponentLatent(0.6), articleTagSample());
+  BOOST_CHECK(isClose(score, 0.4));
+}
+
+BOOST_AUTO_TEST_CASE(cold_start_ignores_vectors)
+{
+  Recommender recommender;
+  double liked = recommender.userArticleScore(firstComponentLatent(1.5), preferenceSample(), 0,
+                                              firstComponentLatent(2.0), articleTagSample());
+  double disliked = recommender.userArticleScore(firstComponentLatent(1.5), preferenceSample(), 0,
+                                                 firstComponentLatent(-2.0), articleTagSample());
+  BOOST_CHECK(isClose(liked, disliked));
+}
+
+BOOST_AUTO_TEST_CASE(shrinkage_count_gives_equal_weights)
+{
+  Recommender recommender;
+  double score = recommender.userArticleScore(firstComponentLatent(1.0), preferenceSample(), 5,
+                                              firstComponentLatent(0.6), articleTagSample());
+  BOOST_CHECK(isClose(score, 0.5 * 0.8 + 0.5 * 0.4));
+}
+
+BOOST_AUTO_TEST_CASE(matches_design_example)
+{
+  Recommender recommender;
+  double score = recommender.userArticleScore(firstComponentLatent(1.0), preferenceSample(), 15,
+                                              firstComponentLatent(0.6), articleTagSample());
+  BOOST_CHECK(isClose(score, 0.75 * 0.8 + 0.25 * 0.4));
+}
+
+BOOST_AUTO_TEST_CASE(many_ratings_approach_mf_signal)
+{
+  Recommender recommender;
+  double score = recommender.userArticleScore(firstComponentLatent(1.0), preferenceSample(), 1000000,
+                                              firstComponentLatent(0.6), articleTagSample());
+  BOOST_CHECK(isClose(score, 0.8, 1e-5));
+}
+
+BOOST_AUTO_TEST_CASE(custom_shrinkage_changes_weights)
+{
+  Recommender recommender(1.0);
+  double score = recommender.userArticleScore(firstComponentLatent(1.0), preferenceSample(), 1,
+                                              firstComponentLatent(0.6), articleTagSample());
+  BOOST_CHECK(isClose(score, 0.5 * 0.8 + 0.5 * 0.4));
+}
+
+BOOST_AUTO_TEST_CASE(stays_within_unit_interval)
+{
+  Recommender recommender;
+  TagSet tags = articleTagSample();
+  double best =
+      recommender.userArticleScore(firstComponentLatent(1.5), tags, 5, firstComponentLatent(2.0), tags);
+  double worst = recommender.userArticleScore(firstComponentLatent(1.5), makeTags({"a", "b"}), 5,
+                                              firstComponentLatent(-2.0), makeTags({"c", "d"}));
+  BOOST_CHECK(isClose(best, 1.0));
+  BOOST_CHECK(isClose(worst, 0.0));
+}
+
+BOOST_AUTO_TEST_CASE(no_preferences_rank_only_by_vectors)
+{
+  Recommender recommender;
+  double liked = recommender.userArticleScore(firstComponentLatent(1.0), TagSet(), 5,
+                                              firstComponentLatent(0.6), articleTagSample());
+  double neutral =
+      recommender.userArticleScore(firstComponentLatent(1.0), TagSet(), 5, Latent{}, articleTagSample());
+  BOOST_CHECK(isClose(liked, 0.5 * 0.8));
+  BOOST_CHECK(isClose(neutral, 0.5 * 0.5));
+  BOOST_CHECK(liked > neutral);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(article_article_score_tests)
+
+BOOST_AUTO_TEST_CASE(matches_design_example)
+{
+  Recommender recommender;
+  double score = recommender.articleArticleScore(firstComponentLatent(1.0), preferenceSample(), 5,
+                                                 twoComponentLatent(1.0, 1.0), articleTagSample(), 100);
+  double cosineSignal = (1.0 / std::sqrt(2.0) + 1.0) / 2.0;
+  BOOST_CHECK(isClose(score, 0.5 * cosineSignal + 0.5 * 0.4));
+}
+
+BOOST_AUTO_TEST_CASE(weight_uses_smaller_rating_count)
+{
+  Recommender recommender;
+  double unrated = recommender.articleArticleScore(firstComponentLatent(1.0), preferenceSample(), 0,
+                                                   firstComponentLatent(-1.0), articleTagSample(), 100);
+  BOOST_CHECK(isClose(unrated, 0.4));
+  double fewRatings = recommender.articleArticleScore(firstComponentLatent(1.0), preferenceSample(), 100,
+                                                      firstComponentLatent(1.0), articleTagSample(), 5);
+  BOOST_CHECK(isClose(fewRatings, 0.5 * 1.0 + 0.5 * 0.4));
+}
+
+BOOST_AUTO_TEST_CASE(is_symmetric_in_article_order)
+{
+  Recommender recommender;
+  double forward = recommender.articleArticleScore(firstComponentLatent(1.0), preferenceSample(), 3,
+                                                   twoComponentLatent(0.4, -0.9), articleTagSample(), 12);
+  double backward = recommender.articleArticleScore(twoComponentLatent(0.4, -0.9), articleTagSample(), 12,
+                                                    firstComponentLatent(1.0), preferenceSample(), 3);
+  BOOST_CHECK(isClose(forward, backward));
+}
+
+BOOST_AUTO_TEST_CASE(identical_articles_give_one)
+{
+  Recommender recommender;
+  Latent latent = twoComponentLatent(0.3, -0.7);
+  TagSet tags = articleTagSample();
+  BOOST_CHECK(isClose(recommender.articleArticleScore(latent, tags, 7, latent, tags, 7), 1.0));
+}
+
+BOOST_AUTO_TEST_CASE(does_not_depend_on_vector_length)
+{
+  Recommender recommender;
+  double shortVectors = recommender.articleArticleScore(twoComponentLatent(0.1, 0.2), preferenceSample(), 5,
+                                                        twoComponentLatent(0.3, -0.1), articleTagSample(), 5);
+  double longVectors = recommender.articleArticleScore(twoComponentLatent(10.0, 20.0), preferenceSample(), 5,
+                                                       twoComponentLatent(3.0, -1.0), articleTagSample(), 5);
+  BOOST_CHECK(isClose(shortVectors, longVectors));
+}
+
+BOOST_AUTO_TEST_CASE(orthogonal_vectors_give_neutral_vector_signal)
+{
+  Recommender recommender;
+  double score = recommender.articleArticleScore(firstComponentLatent(1.0), preferenceSample(), 5,
+                                                 twoComponentLatent(0.0, 1.0), articleTagSample(), 5);
+  BOOST_CHECK(isClose(score, 0.5 * 0.5 + 0.5 * 0.4));
+}
+
+BOOST_AUTO_TEST_CASE(empty_tags_rely_only_on_vectors)
+{
+  Recommender recommender;
+  Latent latent = twoComponentLatent(0.3, -0.7);
+  BOOST_CHECK(isClose(recommender.articleArticleScore(latent, TagSet(), 5, latent, TagSet(), 5), 0.5));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
