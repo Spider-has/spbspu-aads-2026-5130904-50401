@@ -11,6 +11,7 @@ namespace khasnulin
     // если пробросить nullptr -- фильтр отменяется, по критерию пропускаются все статьи.
     ArticleFilter(const Category *category = nullptr, const Difficulty *difficulty = nullptr) noexcept;
 
+    // Проверяет article на удовлетворение условиям. Если условия не заданы -- всегда true
     bool matches(const Article &article) const;
 
     const Category *category() const noexcept;

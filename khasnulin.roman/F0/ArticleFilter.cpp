@@ -1,16 +1,24 @@
 #include "ArticleFilter.hpp"
 #include "Entities.hpp"
 
-khasnulin::ArticleFilter::ArticleFilter(const Category *category, const Difficulty *difficulty) noexcept
+khasnulin::ArticleFilter::ArticleFilter(const Category *category, const Difficulty *difficulty) noexcept:
+    category_(category),
+    difficulty_(difficulty)
 {
-  (void)category;
-  (void)difficulty;
 }
 
 bool khasnulin::ArticleFilter::matches(const Article &article) const
 {
-  (void)article;
-  return false;
+  bool result = true;
+  if (category_ != nullptr)
+  {
+    result &= article.category() == (*category_);
+  }
+  if (result && difficulty_ != nullptr)
+  {
+    result &= article.difficulty() == (*difficulty_);
+  }
+  return result;
 }
 
 const khasnulin::Category *khasnulin::ArticleFilter::category() const noexcept
