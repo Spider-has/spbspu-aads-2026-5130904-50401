@@ -2,6 +2,7 @@
 #define MODEL_HPP
 
 #include "Entities.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -27,6 +28,32 @@ namespace khasnulin
 
   // Получить latent вектор из name article
   Latent initialLatent(const ArticleName &name);
+
+  class Learner
+  {
+  public:
+    static constexpr double defaultLearningRate = 0.1;
+    static constexpr double defaultRegularization = 0.02;
+    static constexpr std::size_t defaultStepCount = 10;
+
+    // Передаем lr -- размер шага после каждого обучения модели. Насколько далеко векторы сдвигаются за шаг.
+    // regularization -- штраф за длину векторов при вычислении силы смещения.
+    // stepCount -- количество повторений вызовов перевычислений  векторов при обучении модели
+    explicit Learner(double learningRate = defaultLearningRate, double regularization = defaultRegularization,
+                     std::size_t stepCount = defaultStepCount);
+
+    // делает один шаг обновления векторов для одной оценки. Target -- имеющаяся оценка пользователя в целевом
+    // виде [−1, 1]
+    void sgdStep(Latent &user, Latent &article, double target) const noexcept;
+
+    // learn фукнция для прокидывания объекта в rate у storage
+    void operator()(Latent &user, Latent &article, const Rating &) const noexcept;
+
+  private:
+    double learningRate_;
+    double regularization_;
+    std::size_t steps_;
+  };
 }
 
 #endif
