@@ -44,7 +44,7 @@ namespace khasnulin
     // regularization -- штраф за длину векторов при вычислении силы смещения.
     // stepCount -- количество повторений вызовов перевычислений  векторов при обучении модели
     explicit Learner(double learningRate = defaultLearningRate, double regularization = defaultRegularization,
-                     std::size_t stepCount = defaultStepCount);
+                     std::size_t stepCount = defaultStepCount) noexcept;
 
     // делает один шаг обновления векторов для одной оценки. Target -- имеющаяся оценка пользователя в целевом
     // виде [−1, 1]
@@ -57,6 +57,33 @@ namespace khasnulin
     double learningRate_;
     double regularization_;
     std::size_t steps_;
+  };
+
+  class Recommender
+  {
+  public:
+    static constexpr double defaultShrinkage = 5.0;
+
+    // shrinkage -- число оценок, при котором векторам доверяют наравне с тегами
+    explicit Recommender(double shrinkage = defaultShrinkage) noexcept;
+
+    // доверие к сигналу векторов при ratingCount оценках, [0, 1)
+    double confidence(std::size_t ratingCount) const noexcept;
+
+    // коэффициент рекомендуемости  статьи для этого пользователя [0, 1] только на основе латентных векторов
+    static double mfSignal(const Latent &user, const Latent &article) noexcept;
+
+    // предположительная оценка пользователя для этой статьи [1; 10]
+    double userArticleScore(const Latent &user, const TagSet &preferences, std::size_t userRatingCount,
+                            const Latent &article, const TagSet &tags) const noexcept;
+
+    // сходство между двумя статьями [1; 10]
+    double articleArticleScore(const Latent &art1, const TagSet &tags1, std::size_t art1RatingsCount,
+                               const Latent &art2, const TagSet &tags2,
+                               std::size_t art2RatingsCount) const noexcept;
+
+  private:
+    double shrinkage_;
   };
 }
 

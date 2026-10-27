@@ -83,7 +83,7 @@ khasnulin::Latent khasnulin::initialLatent(const ArticleName &name)
 // Передаем lr -- размер шага после каждого обучения модели. Насколько далеко векторы сдвигаются за шаг.
 // regularization -- штраф за длину векторов при вычислении силы смещения.
 // stepCount -- количество повторений вызовов перевычислений  векторов при обучении модели
-khasnulin::Learner::Learner(double learningRate, double regularization, std::size_t stepCount):
+khasnulin::Learner::Learner(double learningRate, double regularization, std::size_t stepCount) noexcept:
     learningRate_(learningRate),
     regularization_(regularization),
     steps_(stepCount)
