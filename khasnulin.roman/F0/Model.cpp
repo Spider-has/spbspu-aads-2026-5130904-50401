@@ -115,7 +115,7 @@ void khasnulin::Learner::sgdStep(Latent &user, Latent &article, double target) c
 void khasnulin::Learner::operator()(Latent &user, Latent &article, const Rating &rating) const noexcept
 {
   double target = toInterval(rating.value(), static_cast< double >(Rating::minRating),
-                             static_cast< double >(Rating::maxRating), latentMin, latentMax);
+                             static_cast< double >(Rating::maxRating), targetScaleMin, targetScaleMax);
   for (std::size_t i = 0; i < steps_; ++i)
   {
     sgdStep(user, article, target);

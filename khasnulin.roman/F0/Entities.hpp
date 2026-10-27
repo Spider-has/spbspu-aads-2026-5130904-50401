@@ -80,9 +80,6 @@ namespace khasnulin
 
   constexpr std::size_t latentDimensionCount = 8;
 
-  constexpr double latentMin = -1;
-  constexpr double latentMax = 1;
-
   struct Latent
   {
     double v[latentDimensionCount];
