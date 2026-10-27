@@ -80,9 +80,6 @@ khasnulin::Latent khasnulin::initialLatent(const ArticleName &name)
   return latentFromSeed(hash);
 }
 
-// Передаем lr -- размер шага после каждого обучения модели. Насколько далеко векторы сдвигаются за шаг.
-// regularization -- штраф за длину векторов при вычислении силы смещения.
-// stepCount -- количество повторений вызовов перевычислений  векторов при обучении модели
 khasnulin::Learner::Learner(double learningRate, double regularization, std::size_t stepCount) noexcept:
     learningRate_(learningRate),
     regularization_(regularization),
@@ -93,8 +90,6 @@ khasnulin::Learner::Learner(double learningRate, double regularization, std::siz
   assert(stepCount > 0);
 }
 
-// делает один шаг обновления векторов для одной оценки. Target -- имеющаяся оценка пользователя в целевом
-// виде [−1, 1]
 void khasnulin::Learner::sgdStep(Latent &user, Latent &article, double target) const noexcept
 {
   double error = target - scalarProduct(user, article);
@@ -111,7 +106,6 @@ void khasnulin::Learner::sgdStep(Latent &user, Latent &article, double target) c
   }
 }
 
-// learn фукнция для прокидывания объекта в rate у storage
 void khasnulin::Learner::operator()(Latent &user, Latent &article, const Rating &rating) const noexcept
 {
   double target = toInterval(rating.value(), static_cast< double >(Rating::minRating),
