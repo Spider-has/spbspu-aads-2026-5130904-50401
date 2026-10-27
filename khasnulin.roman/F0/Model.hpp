@@ -17,7 +17,7 @@ namespace khasnulin
   std::uint64_t fnv1aHash(const std::string &str, std::uint64_t hash = offsetBasisFNV1a) noexcept;
 
   // двигает state на константу и возвращает перемешанное новое значение
-  std::uint64_t splitmix64(std::uint64_t &seed) noexcept;
+  std::uint64_t splitmix64(std::uint64_t &state) noexcept;
 
   // перевод из 64-битного числа в double от 0 до 1 [0, 1)
   double unitFromBits(std::uint64_t bits) noexcept;
