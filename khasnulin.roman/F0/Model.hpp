@@ -62,13 +62,13 @@ namespace khasnulin
     std::size_t steps_;
   };
 
-  class Recommender
+  class Scorer
   {
   public:
     static constexpr double defaultShrinkage = 5.0;
 
     // shrinkage -- число оценок, при котором векторам доверяют наравне с тегами
-    explicit Recommender(double shrinkage = defaultShrinkage) noexcept;
+    explicit Scorer(double shrinkage = defaultShrinkage) noexcept;
 
     // доверие к сигналу векторов при ratingCount оценках, [0, 1)
     double confidence(std::size_t ratingCount) const noexcept;

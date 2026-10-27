@@ -116,20 +116,20 @@ void khasnulin::Learner::operator()(Latent &user, Latent &article, const Rating 
   }
 }
 
-khasnulin::Recommender::Recommender(double shrinkage) noexcept:
+khasnulin::Scorer::Scorer(double shrinkage) noexcept:
     shrinkage_(shrinkage)
 {
   assert(shrinkage > 0);
 }
 
 // доверие к сигналу векторов при ratingCount оценках, [0, 1)
-double khasnulin::Recommender::confidence(std::size_t ratingCount) const noexcept
+double khasnulin::Scorer::confidence(std::size_t ratingCount) const noexcept
 {
   return static_cast< double >(ratingCount) / (static_cast< double >(ratingCount) + shrinkage_);
 }
 
 // коэффициент рекомендуемости  статьи для этого пользователя [0, 1] только на основе латентных векторов
-double khasnulin::Recommender::mfSignal(const Latent &user, const Latent &article) noexcept
+double khasnulin::Scorer::mfSignal(const Latent &user, const Latent &article) noexcept
 {
   double koef = scalarProduct(user, article);
   koef = clip(koef, targetScaleMin, targetScaleMax);
@@ -137,19 +137,19 @@ double khasnulin::Recommender::mfSignal(const Latent &user, const Latent &articl
 }
 
 // возвращает коэффициент [0; 1] -- то, насколько статья кандидат подходит пользователю
-double khasnulin::Recommender::userArticleScore(const Latent &user, const TagSet &preferences,
-                                                std::size_t userRatingCount, const Latent &article,
-                                                const TagSet &tags) const noexcept
+double khasnulin::Scorer::userArticleScore(const Latent &user, const TagSet &preferences,
+                                           std::size_t userRatingCount, const Latent &article,
+                                           const TagSet &tags) const noexcept
 {
   double conf = confidence(userRatingCount);
   return (mfSignal(user, article) * conf) + ((1 - conf) * jaccard(preferences, tags));
 }
 
 // возвращает коэффициент [0; 1] -- то, насколько две статьи схожи
-double khasnulin::Recommender::articleArticleScore(const Latent &art1, const TagSet &tags1,
-                                                   std::size_t art1RatingsCount, const Latent &art2,
-                                                   const TagSet &tags2,
-                                                   std::size_t art2RatingsCount) const noexcept
+double khasnulin::Scorer::articleArticleScore(const Latent &art1, const TagSet &tags1,
+                                              std::size_t art1RatingsCount, const Latent &art2,
+                                              const TagSet &tags2,
+                                              std::size_t art2RatingsCount) const noexcept
 {
   std::size_t minCount = art1RatingsCount < art2RatingsCount ? art1RatingsCount : art2RatingsCount;
   double conf = confidence(minCount);
