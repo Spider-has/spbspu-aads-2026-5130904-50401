@@ -69,6 +69,8 @@ namespace khasnulin
 
     bool hasRating(const UserName &user, const ArticleName &article) const;
 
+    bool hasCategory(const Category &category) const;
+
   private:
     UserRepo users_;
     ArticleRepo articles_;
