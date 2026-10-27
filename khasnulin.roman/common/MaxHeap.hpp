@@ -22,6 +22,8 @@ namespace khasnulin
 
     explicit MaxHeap(const Compare &compare);
 
+    value_compare valueComp();
+
     // положить в кучу элемент.
     void push(const_reference value);
     void push(value_type &&value);
