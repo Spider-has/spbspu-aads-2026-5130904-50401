@@ -36,10 +36,10 @@ namespace khasnulin
     Vector< Recommendation > similar(const Storage &storage, const ArticleName &name) const;
 
   private:
+    Scorer scorer_;
+
     std::size_t recommendLimit_;
     std::size_t similarLimit_;
-
-    Scorer scorer_;
   };
 
 }

@@ -128,3 +128,8 @@ bool khasnulin::Storage::hasRating(const UserName &user, const ArticleName &arti
 {
   return ratings_.hasRating(user.value(), article.value());
 }
+
+bool khasnulin::Storage::hasCategory(const Category &category) const
+{
+  return articles_.categoryCount(category) > 0;
+}
