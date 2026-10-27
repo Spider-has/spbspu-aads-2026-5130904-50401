@@ -47,7 +47,7 @@ namespace khasnulin
     void sgdStep(Latent &user, Latent &article, double target) const noexcept;
 
     // learn фукнция для прокидывания объекта в rate у storage
-    void operator()(Latent &user, Latent &article, const Rating &) const noexcept;
+    void operator()(Latent &user, Latent &article, const Rating &rating) const noexcept;
 
   private:
     double learningRate_;
