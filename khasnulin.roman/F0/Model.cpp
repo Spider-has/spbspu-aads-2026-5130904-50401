@@ -11,15 +11,31 @@ namespace
 
   constexpr std::uint64_t primeSplitmixConst1 = 0xBF58476D1CE4E5B9;
   constexpr std::uint64_t primeSplitmixConst2 = 0x94D049BB133111EB;
-};
 
-// Шаг fnv1a для 1 байта
+  constexpr unsigned char userPrefix = 'u';
+  constexpr unsigned char articlePrefix = 'a';
+
+  constexpr double latentInitAmplitude = 0.1;
+
+  khasnulin::Latent latentFromSeed(std::uint64_t seed)
+  {
+    using namespace khasnulin;
+    Latent ans;
+    for (std::size_t i = 0; i < latentDimensionCount; ++i)
+    {
+      std::uint64_t bits = splitmix64(seed);
+      double unit = unitFromBits(bits);
+      ans.v[i] = toInterval(unit, 0, 1, -latentInitAmplitude, latentInitAmplitude);
+    }
+    return ans;
+  }
+}
+
 std::uint64_t khasnulin::fnv1aStep(std::uint64_t hash, unsigned char byte) noexcept
 {
   return (hash ^ byte) * primeFNV1a;
 }
 
-// хэширует строку продолжая переданный хэш. По дефолту стандартный базис fnv1a
 std::uint64_t khasnulin::fnv1aHash(const std::string &str, std::uint64_t hash) noexcept
 {
   std::uint64_t result = hash;
@@ -30,7 +46,6 @@ std::uint64_t khasnulin::fnv1aHash(const std::string &str, std::uint64_t hash) n
   return result;
 }
 
-// двигает state на константу и возвращает перемешанное новое значение
 std::uint64_t khasnulin::splitmix64(std::uint64_t &seed) noexcept
 {
   seed = seed + splitmixIncrement;
@@ -41,41 +56,24 @@ std::uint64_t khasnulin::splitmix64(std::uint64_t &seed) noexcept
   return result;
 }
 
-// перевод из 64-битного числа в double от 0 до 1 [0, 1)
 double khasnulin::unitFromBits(std::uint64_t bits) noexcept
 {
   bits = bits >> 11;
   return double(bits) / double(2ULL << 52);
 }
 
-// Получить latent вектор из name пользователя
 khasnulin::Latent khasnulin::initialLatent(const UserName &name)
 {
-  std::uint64_t hash = fnv1aHash("u");
+  std::uint64_t hash = fnv1aStep(offsetBasisFNV1a, userPrefix);
   hash = fnv1aHash(name.value(), hash);
-  Latent ans;
-  for (std::size_t i = 0; i < latentDimensionCount; ++i)
-  {
-    std::uint64_t bits = splitmix64(hash);
-    double unit = unitFromBits(bits);
-    ans.v[i] = toInterval(unit, 0, 1, -latentInitAmplitude, latentInitAmplitude);
-  }
 
-  return ans;
+  return latentFromSeed(hash);
 }
 
-// Получить latent вектор из name article
 khasnulin::Latent khasnulin::initialLatent(const ArticleName &name)
 {
-  std::uint64_t hash = fnv1aHash("a");
+  std::uint64_t hash = fnv1aStep(offsetBasisFNV1a, articlePrefix);
   hash = fnv1aHash(name.value(), hash);
-  Latent ans;
-  for (std::size_t i = 0; i < latentDimensionCount; ++i)
-  {
-    std::uint64_t bits = splitmix64(hash);
-    double unit = unitFromBits(bits);
-    ans.v[i] = toInterval(unit, 0, 1, -latentInitAmplitude, latentInitAmplitude);
-  }
 
-  return ans;
+  return latentFromSeed(hash);
 }

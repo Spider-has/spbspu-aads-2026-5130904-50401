@@ -10,11 +10,6 @@ namespace khasnulin
 
   constexpr std::uint64_t offsetBasisFNV1a = 0xcbf29ce484222325;
 
-  constexpr unsigned char userPrefix = 'u';
-  constexpr unsigned char articlePrefix = 'a';
-
-  constexpr double latentInitAmplitude = 0.1;
-
   // Шаг fnv1a для 1 байта
   std::uint64_t fnv1aStep(std::uint64_t hash, unsigned char byte) noexcept;
 
