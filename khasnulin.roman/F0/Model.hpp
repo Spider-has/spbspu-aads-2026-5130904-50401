@@ -73,11 +73,11 @@ namespace khasnulin
     // коэффициент рекомендуемости  статьи для этого пользователя [0, 1] только на основе латентных векторов
     static double mfSignal(const Latent &user, const Latent &article) noexcept;
 
-    // предположительная оценка пользователя для этой статьи [1; 10]
+    // возвращает коэффициент [0; 1] -- то, насколько статья кандидат подходит пользователю
     double userArticleScore(const Latent &user, const TagSet &preferences, std::size_t userRatingCount,
                             const Latent &article, const TagSet &tags) const noexcept;
 
-    // сходство между двумя статьями [1; 10]
+    // возвращает коэффициент [0; 1] -- то, насколько две статьи схожи
     double articleArticleScore(const Latent &art1, const TagSet &tags1, std::size_t art1RatingsCount,
                                const Latent &art2, const TagSet &tags2,
                                std::size_t art2RatingsCount) const noexcept;
