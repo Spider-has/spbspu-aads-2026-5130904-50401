@@ -35,6 +35,55 @@ namespace khasnulin
     size_type limit_;
     MaxHeap< T, Compare > heap_;
   };
+
+  template < class T, class Compare >
+  BoundedPriorityQueue< T, Compare >::BoundedPriorityQueue(size_type limit, const Compare &better)
+  {
+    (void)limit;
+    (void)better;
+  }
+
+  template < class T, class Compare > bool BoundedPriorityQueue< T, Compare >::suggest(const T &val)
+  {
+    (void)val;
+    return false;
+  }
+
+  template < class T, class Compare > bool BoundedPriorityQueue< T, Compare >::suggest(T &&val)
+  {
+    (void)val;
+    return false;
+  }
+
+  template < class T, class Compare >
+  typename BoundedPriorityQueue< T, Compare >::size_type
+  BoundedPriorityQueue< T, Compare >::limit() const noexcept
+  {
+    return 0;
+  }
+
+  template < class T, class Compare >
+  typename BoundedPriorityQueue< T, Compare >::size_type
+  BoundedPriorityQueue< T, Compare >::size() const noexcept
+  {
+    return 0;
+  }
+
+  template < class T, class Compare > bool BoundedPriorityQueue< T, Compare >::empty() const noexcept
+  {
+    return true;
+  }
+
+  template < class T, class Compare > void BoundedPriorityQueue< T, Compare >::clear() noexcept
+  {
+  }
+
+  template < class T, class Compare >
+  template < class F >
+  void BoundedPriorityQueue< T, Compare >::traverseAndClear(F f)
+  {
+    (void)f;
+  }
 }
 
 #endif

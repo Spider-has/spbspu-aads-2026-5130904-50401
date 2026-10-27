@@ -182,6 +182,11 @@ namespace khasnulin
     std::swap(compare_, rhs.compare_);
     std::swap(heap_, rhs.heap_);
   }
+  template < class T, class Compare >
+  typename MaxHeap< T, Compare >::value_compare MaxHeap< T, Compare >::valueComp() const
+  {
+    return compare_;
+  }
 }
 
 #endif
