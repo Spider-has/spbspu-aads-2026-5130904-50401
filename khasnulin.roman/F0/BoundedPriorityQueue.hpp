@@ -7,6 +7,7 @@
 
 namespace khasnulin
 {
+  // Compare(const T& a, const T& b), a лучше b; хранит limit лучших
   template < class T, class Compare > class BoundedPriorityQueue
   {
   public:
@@ -16,7 +17,6 @@ namespace khasnulin
     using reference = T &;
     using const_reference = const T &;
 
-    // Compare(const T& a, const T& b), a лучше b; хранит limit лучших
     explicit BoundedPriorityQueue(size_type limit, const Compare &better);
 
     // попал кандидат в отбор или нет. true -- попал
