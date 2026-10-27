@@ -1,6 +1,7 @@
 #include "Model.hpp"
 #include "Entities.hpp"
 #include "Math.hpp"
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 
@@ -82,26 +83,41 @@ khasnulin::Latent khasnulin::initialLatent(const ArticleName &name)
 // Передаем lr -- размер шага после каждого обучения модели. Насколько далеко векторы сдвигаются за шаг.
 // regularization -- штраф за длину векторов при вычислении силы смещения.
 // stepCount -- количество повторений вызовов перевычислений  векторов при обучении модели
-khasnulin::Learner::Learner(double learningRate, double regularization, std::size_t stepCount)
+khasnulin::Learner::Learner(double learningRate, double regularization, std::size_t stepCount):
+    learningRate_(learningRate),
+    regularization_(regularization),
+    steps_(stepCount)
 {
-  (void)learningRate;
-  (void)regularization;
-  (void)stepCount;
+  assert(learningRate > 0);
+  assert(regularization >= 0);
+  assert(stepCount > 0);
 }
 
 // делает один шаг обновления векторов для одной оценки. Target -- имеющаяся оценка пользователя в целевом
 // виде [−1, 1]
 void khasnulin::Learner::sgdStep(Latent &user, Latent &article, double target) const noexcept
 {
-  (void)user;
-  (void)article;
-  (void)target;
+  double error = target - scalarProduct(user, article);
+  Latent tempUser = user;
+
+  for (std::size_t i = 0; i < latentDimensionCount; ++i)
+  {
+    user.v[i] = user.v[i] + learningRate_ * (error * article.v[i] - regularization_ * tempUser.v[i]);
+  }
+
+  for (std::size_t i = 0; i < latentDimensionCount; ++i)
+  {
+    article.v[i] = article.v[i] + learningRate_ * (error * tempUser.v[i] - regularization_ * article.v[i]);
+  }
 }
 
 // learn фукнция для прокидывания объекта в rate у storage
 void khasnulin::Learner::operator()(Latent &user, Latent &article, const Rating &rating) const noexcept
 {
-  (void)user;
-  (void)article;
-  (void)rating;
+  double target = toInterval(rating.value(), static_cast< double >(Rating::minRating),
+                             static_cast< double >(Rating::maxRating), latentMin, latentMax);
+  for (std::size_t i = 0; i < steps_; ++i)
+  {
+    sgdStep(user, article, target);
+  }
 }
