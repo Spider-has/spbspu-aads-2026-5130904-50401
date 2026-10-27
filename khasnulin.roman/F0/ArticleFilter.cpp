@@ -1,5 +1,4 @@
 #include "ArticleFilter.hpp"
-#include "Entities.hpp"
 
 khasnulin::ArticleFilter::ArticleFilter(const Category *category, const Difficulty *difficulty) noexcept:
     category_(category),
@@ -10,13 +9,13 @@ khasnulin::ArticleFilter::ArticleFilter(const Category *category, const Difficul
 bool khasnulin::ArticleFilter::matches(const Article &article) const
 {
   bool result = true;
-  if (category_ != nullptr)
-  {
-    result &= article.category() == (*category_);
-  }
-  if (result && difficulty_ != nullptr)
+  if (difficulty_ != nullptr)
   {
     result &= article.difficulty() == (*difficulty_);
+  }
+  if (result && category_ != nullptr)
+  {
+    result &= article.category() == (*category_);
   }
   return result;
 }
