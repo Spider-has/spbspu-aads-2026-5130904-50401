@@ -1,5 +1,6 @@
 #include "Tokenizer.hpp"
 #include "Vector.hpp"
+#include <stdexcept>
 
 khasnulin::Token::Token() noexcept:
     isQuoted(false),
@@ -7,8 +8,87 @@ khasnulin::Token::Token() noexcept:
 {
 }
 
+khasnulin::Token::Token(bool quoted, const std::string &text) noexcept:
+    isQuoted(quoted),
+    text(text)
+{
+}
+
+khasnulin::Token::Token(bool quoted, std::string &&text) noexcept:
+    isQuoted(quoted),
+    text(std::move(text))
+{
+}
+
 khasnulin::Vector< khasnulin::Token > khasnulin::tokenize(const std::string &line)
 {
-  (void)line;
-  return Vector< Token >();
+  Vector< Token > result;
+  bool inQuote = false;
+  bool afterQuote = false;
+  std::string tempStr;
+
+  for (char ch : line)
+  {
+    if (ch == '\r')
+    {
+      continue;
+    }
+    if (afterQuote)
+    {
+      if (ch != ' ' && ch != '\n')
+      {
+        throw std::invalid_argument("tokenize: invalid line, there must be space or end of line after qoute");
+      }
+      afterQuote = false;
+    }
+    else if (inQuote)
+    {
+      if (ch == '\"')
+      {
+        inQuote = false;
+        result.pushBack(Token(true, std::move(tempStr)));
+        tempStr = "";
+        afterQuote = true;
+      }
+      else
+      {
+        tempStr.push_back(ch);
+      }
+    }
+    else if (ch != ' ' && ch != '\"')
+    {
+      tempStr.push_back(ch);
+    }
+    else if (ch == '\"')
+    {
+      if (tempStr.empty())
+      {
+        inQuote = true;
+      }
+      else
+      {
+        throw std::invalid_argument("tokenize: invalid line, quote must be after space or on new line");
+      }
+    }
+    else
+    {
+      if (!tempStr.empty())
+      {
+        result.pushBack(Token(false, std::move(tempStr)));
+        tempStr = "";
+      }
+    }
+  }
+
+  if (inQuote)
+  {
+    throw std::invalid_argument("tokenize: invalid line, all quotes must be closed");
+  }
+
+  if (!tempStr.empty())
+  {
+    result.pushBack(Token(false, std::move(tempStr)));
+  }
+
+  return result;
 }

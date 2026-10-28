@@ -10,6 +10,8 @@ namespace khasnulin
     bool isQuoted;
     std::string text;
     Token() noexcept;
+    Token(bool quoted, const std::string &text) noexcept;
+    Token(bool quoted, std::string &&text) noexcept;
   };
 
   Vector< Token > tokenize(const std::string &line);
