@@ -165,11 +165,8 @@ void khasnulin::CommandProcessor::addArticle(ArgumentReader &arguments, std::ost
   Category category = arguments.category();
   Difficulty difficulty = arguments.difficulty();
   Latent latent = initialLatent(name);
-  TagSet tags;
-  if (arguments.remaining() > 0)
-  {
-    tags = arguments.restTags();
-  }
+  TagSet tags = arguments.restTags();
+
   arguments.finish();
   if (!storage_.addArticle(name, category, difficulty, latent))
   {
@@ -196,12 +193,12 @@ void khasnulin::CommandProcessor::addArticleTags(ArgumentReader &arguments, std:
   {
     throw std::invalid_argument("list of tags can't be empty");
   }
+  TagSet tags = arguments.restTags();
+  arguments.finish();
   if (!storage_.findArticle(name))
   {
     throw std::invalid_argument("article with such title not found");
   }
-  TagSet tags = arguments.restTags();
-  arguments.finish();
   tags.traverseLNR([&](const auto &tag) { storage_.addArticleTag(name, tag.first); });
 }
 
@@ -242,7 +239,10 @@ void khasnulin::CommandProcessor::deleteArticle(ArgumentReader &arguments, std::
 {
   ArticleName name = arguments.articleName();
   arguments.finish();
-  storage_.eraseArticle(name);
+  if (!storage_.eraseArticle(name))
+  {
+    throw std::invalid_argument("article with such title not found");
+  }
 }
 
 void khasnulin::CommandProcessor::listArticles(ArgumentReader &arguments, std::ostream &output)
