@@ -9,7 +9,7 @@ namespace khasnulin
   {
     bool isQuoted;
     std::string text;
-    Token();
+    Token() noexcept;
   };
 
   Vector< Token > tokenize(const std::string &line);
