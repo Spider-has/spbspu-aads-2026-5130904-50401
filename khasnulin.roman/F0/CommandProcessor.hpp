@@ -43,6 +43,7 @@ namespace khasnulin
     void deleteArticle(ArgumentReader &arguments, std::ostream &output);
     void listArticles(ArgumentReader &arguments, std::ostream &output);
     void showUserRatings(ArgumentReader &arguments, std::ostream &output);
+    void rateArticle(ArgumentReader &arguments, std::ostream &output);
   };
 }
 

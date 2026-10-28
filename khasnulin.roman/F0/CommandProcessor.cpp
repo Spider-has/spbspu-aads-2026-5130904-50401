@@ -27,6 +27,10 @@ khasnulin::CommandProcessor::CommandProcessor(Learner learner, Recommender recom
   handlers_.insert({"add-article", &CommandProcessor::addArticle});
   handlers_.insert({"add-article-tags", &CommandProcessor::addArticleTags});
   handlers_.insert({"delete-article", &CommandProcessor::deleteArticle});
+  handlers_.insert({"list-articles", &CommandProcessor::listArticles});
+  handlers_.insert({"show-article-info", &CommandProcessor::showArticleInfo});
+  handlers_.insert({"show-user-ratings", &CommandProcessor::showUserRatings});
+  handlers_.insert({"rate-article", &CommandProcessor::rateArticle});
 }
 
 void khasnulin::CommandProcessor::run(std::istream &input, std::ostream &output)
@@ -108,9 +112,13 @@ void khasnulin::CommandProcessor::addUser(ArgumentReader &arguments, std::ostrea
 
 void khasnulin::CommandProcessor::showUsers(ArgumentReader &arguments, std::ostream &output)
 {
-  std::size_t limit = arguments.limit();
-  arguments.finish();
   std::size_t total = storage_.usersCount();
+  std::size_t limit = total;
+  if (arguments.remaining() > 0)
+  {
+    limit = arguments.limit();
+  }
+  arguments.finish();
   if (limit > total)
   {
     throw std::invalid_argument("limit can't be higher than total count of users");
@@ -185,7 +193,11 @@ void khasnulin::CommandProcessor::showArticleInfo(ArgumentReader &arguments, std
                                     sum += rating.value();
                                     ++ratingsCount;
                                   });
-  double avg = sum / static_cast< double >(ratingsCount) / 10.0;
+  double avg = 0.0;
+  if (sum > 0)
+  {
+    avg = sum / static_cast< double >(ratingsCount) / 10.0;
+  }
   output << "Article: \"" << name.value() << "\"\n";
   output << "Category: " << category.value() << " | " << toString(difficulty) << "\n";
   output << "Tags:";
@@ -203,13 +215,13 @@ void khasnulin::CommandProcessor::deleteArticle(ArgumentReader &arguments, std::
 
 void khasnulin::CommandProcessor::listArticles(ArgumentReader &arguments, std::ostream &output)
 {
-  std::size_t limit = arguments.limit();
-  arguments.finish();
   std::size_t total = storage_.articlesCount();
-  if (limit > total)
+  std::size_t limit = total;
+  if (arguments.remaining() > 0)
   {
-    throw std::invalid_argument("limit can't be higher than total count of articles");
+    limit = arguments.limit();
   }
+  arguments.finish();
   std::size_t curr = 0;
   storage_.traverseArticles(
       [&](const Article &article)
@@ -233,4 +245,19 @@ void khasnulin::CommandProcessor::showUserRatings(ArgumentReader &arguments, std
                                  output << "\"" << article.name().value() << "\" - " << rating.value() << "/"
                                         << Rating::maxRating << "\n";
                                });
+}
+
+void khasnulin::CommandProcessor::rateArticle(ArgumentReader &arguments, std::ostream & /*unused*/)
+{
+  UserName userName = arguments.userName();
+  ArticleName articleName = arguments.articleName();
+  Rating rating = arguments.rating();
+
+  arguments.finish();
+  if (!storage_.findUser(userName) || !storage_.findArticle(articleName))
+  {
+    throw std::invalid_argument("incorrect username or article title");
+  }
+
+  storage_.rate(userName, articleName, rating, learner_);
 }
