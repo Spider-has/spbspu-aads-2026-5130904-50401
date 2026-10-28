@@ -1,6 +1,8 @@
 #include "Tokenizer.hpp"
 #include "Vector.hpp"
 #include <stdexcept>
+#include <string>
+#include <utility>
 
 khasnulin::Token::Token() noexcept:
     isQuoted(false),
@@ -8,7 +10,7 @@ khasnulin::Token::Token() noexcept:
 {
 }
 
-khasnulin::Token::Token(bool quoted, const std::string &text) noexcept:
+khasnulin::Token::Token(bool quoted, const std::string &text):
     isQuoted(quoted),
     text(text)
 {
@@ -26,16 +28,19 @@ khasnulin::Vector< khasnulin::Token > khasnulin::tokenize(const std::string &lin
   bool inQuote = false;
   bool afterQuote = false;
   std::string tempStr;
+  std::size_t end = line.size();
 
-  for (char ch : line)
+  if (!line.empty() && line[end - 1] == '\r')
   {
-    if (ch == '\r')
-    {
-      continue;
-    }
+    --end;
+  }
+
+  for (std::size_t i = 0; i < end; ++i)
+  {
+    char ch = line[i];
     if (afterQuote)
     {
-      if (ch != ' ' && ch != '\n')
+      if (ch != ' ')
       {
         throw std::invalid_argument("tokenize: invalid line, there must be space or end of line after qoute");
       }

@@ -211,6 +211,15 @@ BOOST_AUTO_TEST_CASE(strips_trailing_carriage_return)
   BOOST_CHECK(collectQuotedFlags(quoted) == expectedFlags);
 }
 
+BOOST_AUTO_TEST_CASE(keeps_carriage_return_inside_line)
+{
+  std::vector< std::string > plain = {"add\ruser", "roman"};
+  BOOST_CHECK(collectTexts(tokenize("add\ruser roman")) == plain);
+
+  std::vector< std::string > quoted = {"similar", "A\rB"};
+  BOOST_CHECK(collectTexts(tokenize("similar \"A\rB\"")) == quoted);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(tokenize_errors_tests)
