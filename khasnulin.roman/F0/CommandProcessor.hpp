@@ -33,6 +33,16 @@ namespace khasnulin
     bool executeLine(const std::string &line, std::ostream &output);
 
     void showDifficulties(ArgumentReader &arguments, std::ostream &output);
+    void addUser(ArgumentReader &arguments, std::ostream &output);
+    void showUsers(ArgumentReader &arguments, std::ostream &output);
+    void deleteUser(ArgumentReader &arguments, std::ostream &output);
+    void showUserInfo(ArgumentReader &arguments, std::ostream &output);
+    void addArticle(ArgumentReader &arguments, std::ostream &output);
+    void addArticleTags(ArgumentReader &arguments, std::ostream &output);
+    void showArticleInfo(ArgumentReader &arguments, std::ostream &output);
+    void deleteArticle(ArgumentReader &arguments, std::ostream &output);
+    void listArticles(ArgumentReader &arguments, std::ostream &output);
+    void showUserRatings(ArgumentReader &arguments, std::ostream &output);
   };
 }
 

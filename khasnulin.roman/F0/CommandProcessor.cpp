@@ -75,3 +75,55 @@ void khasnulin::CommandProcessor::showDifficulties(ArgumentReader &arguments, st
          << toString(Difficulty::intermediate) << "\n"
          << toString(Difficulty::advanced) << "\n";
 }
+
+void khasnulin::CommandProcessor::addUser(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+
+void khasnulin::CommandProcessor::showUsers(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+void khasnulin::CommandProcessor::deleteUser(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+void khasnulin::CommandProcessor::showUserInfo(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+void khasnulin::CommandProcessor::addArticle(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+void khasnulin::CommandProcessor::addArticleTags(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+void khasnulin::CommandProcessor::showArticleInfo(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+void khasnulin::CommandProcessor::deleteArticle(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+void khasnulin::CommandProcessor::listArticles(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
+void khasnulin::CommandProcessor::showUserRatings(ArgumentReader &arguments, std::ostream &output)
+{
+  (void)arguments;
+  (void)output;
+}
