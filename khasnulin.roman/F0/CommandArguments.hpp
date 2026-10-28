@@ -34,13 +34,13 @@ namespace khasnulin
     void finish() const;
 
   private:
-    const Token &next();
+    const Token &nextQuoted();
     const Token &nextPlain();
     const Vector< Token > &tokens_;
     std::size_t position_;
   };
 
-  std::size_t parseUnsignedNumber(const std::string &);
+  std::size_t parseUnsignedNumber(const std::string &str);
 }
 
 #endif
