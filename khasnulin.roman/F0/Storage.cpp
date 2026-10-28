@@ -133,3 +133,13 @@ bool khasnulin::Storage::hasCategory(const Category &category) const
 {
   return articles_.categoryCount(category) > 0;
 }
+
+khasnulin::Storage::count_type khasnulin::Storage::articlesCount() const noexcept
+{
+  return articles_.size();
+}
+
+khasnulin::Storage::count_type khasnulin::Storage::usersCount() const noexcept
+{
+  return users_.size();
+}

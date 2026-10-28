@@ -71,6 +71,9 @@ namespace khasnulin
 
     bool hasCategory(const Category &category) const;
 
+    count_type articlesCount() const noexcept;
+    count_type usersCount() const noexcept;
+
   private:
     UserRepo users_;
     ArticleRepo articles_;
