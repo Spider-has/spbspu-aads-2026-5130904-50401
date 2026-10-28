@@ -3,7 +3,6 @@
 #include "Entities.hpp"
 #include "Model.hpp"
 #include "Recommender.hpp"
-#include "RefCountIndex.hpp"
 #include "Storage.hpp"
 #include "Tokenizer.hpp"
 #include "Vector.hpp"
@@ -95,7 +94,12 @@ void khasnulin::CommandProcessor::addUser(ArgumentReader &arguments, std::ostrea
   TagSet preferences = arguments.restTags();
   Latent latent = initialLatent(name);
   arguments.finish();
-  storage_.addUser(name, latent);
+
+  if (!storage_.addUser(name, latent))
+  {
+    throw std::invalid_argument("user already exists");
+  }
+
   try
   {
     for (const auto &tag : preferences)
@@ -119,10 +123,6 @@ void khasnulin::CommandProcessor::showUsers(ArgumentReader &arguments, std::ostr
     limit = arguments.limit();
   }
   arguments.finish();
-  if (limit > total)
-  {
-    throw std::invalid_argument("limit can't be higher than total count of users");
-  }
   std::size_t curr = 0;
   storage_.traverseUsers(
       [&](const User &user)
@@ -139,7 +139,10 @@ void khasnulin::CommandProcessor::deleteUser(ArgumentReader &arguments, std::ost
 {
   UserName name = arguments.userName();
   arguments.finish();
-  storage_.eraseUser(name);
+  if (!storage_.eraseUser(name))
+  {
+    throw std::invalid_argument("user with such name not found");
+  }
 }
 
 void khasnulin::CommandProcessor::showUserInfo(ArgumentReader &arguments, std::ostream &output)
@@ -162,13 +165,41 @@ void khasnulin::CommandProcessor::addArticle(ArgumentReader &arguments, std::ost
   Category category = arguments.category();
   Difficulty difficulty = arguments.difficulty();
   Latent latent = initialLatent(name);
+  TagSet tags;
+  if (arguments.remaining() > 0)
+  {
+    tags = arguments.restTags();
+  }
   arguments.finish();
-  storage_.addArticle(name, category, difficulty, latent);
+  if (!storage_.addArticle(name, category, difficulty, latent))
+  {
+    throw std::invalid_argument("article already exists");
+  }
+  try
+  {
+    for (const auto &tag : tags)
+    {
+      storage_.addArticleTag(name, tag.first);
+    }
+  }
+  catch (...)
+  {
+    storage_.eraseArticle(name);
+    throw;
+  }
 }
 
 void khasnulin::CommandProcessor::addArticleTags(ArgumentReader &arguments, std::ostream & /*unused*/)
 {
   ArticleName name = arguments.articleName();
+  if (arguments.remaining() == 0)
+  {
+    throw std::invalid_argument("list of tags can't be empty");
+  }
+  if (!storage_.findArticle(name))
+  {
+    throw std::invalid_argument("article with such title not found");
+  }
   TagSet tags = arguments.restTags();
   arguments.finish();
   tags.traverseLNR([&](const auto &tag) { storage_.addArticleTag(name, tag.first); });
@@ -186,24 +217,25 @@ void khasnulin::CommandProcessor::showArticleInfo(ArgumentReader &arguments, std
   const Category &category = article->category();
   Difficulty difficulty = article->difficulty();
   std::size_t ratingsCount = 0;
-  double sum = 0;
+  std::size_t sum = 0;
   storage_.traverseArticleRatings(name,
                                   [&](const User &, const Rating &rating)
                                   {
                                     sum += rating.value();
                                     ++ratingsCount;
                                   });
-  double avg = 0.0;
-  if (sum > 0)
+  std::size_t tenths = 0;
+  if (ratingsCount > 0)
   {
-    avg = sum / static_cast< double >(ratingsCount) / 10.0;
+    tenths = (20 * sum + ratingsCount) / (2 * ratingsCount);
   }
   output << "Article: \"" << name.value() << "\"\n";
-  output << "Category: " << category.value() << " | " << toString(difficulty) << "\n";
+  output << "Category: " << category.value() << " | Difficulty: " << toString(difficulty) << "\n";
   output << "Tags:";
   article->tags().traverseLNR([&](const auto &tag) { output << " " << tag.first.value(); });
 
-  output << "\nAvg Rating: " << avg << "/" << Rating::maxRating << " (" << ratingsCount << " ratings)\n";
+  output << "\nAvg Rating: " << tenths / 10 << '.' << tenths % 10 << "/" << Rating::maxRating << " ("
+         << ratingsCount << " ratings)\n";
 }
 
 void khasnulin::CommandProcessor::deleteArticle(ArgumentReader &arguments, std::ostream & /*unused*/)
@@ -239,6 +271,10 @@ void khasnulin::CommandProcessor::showUserRatings(ArgumentReader &arguments, std
 {
   UserName name = arguments.userName();
   arguments.finish();
+  if (!storage_.findUser(name))
+  {
+    throw std::invalid_argument("user with such name not found");
+  }
   storage_.traverseUserRatings(name,
                                [&](const Article &article, const Rating &rating)
                                {
