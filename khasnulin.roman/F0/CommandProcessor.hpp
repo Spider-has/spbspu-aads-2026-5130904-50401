@@ -25,7 +25,7 @@ namespace khasnulin
   private:
     using Handler = void (CommandProcessor::*)(ArgumentReader &, std::ostream &);
     void recommendWithFilter(ArgumentReader &arguments, std::ostream &output, const UserName &name,
-                             Category *category, Difficulty *difficulty);
+                             const Category *category, const Difficulty *difficulty);
 
     Learner learner_;
     Recommender recommender_;

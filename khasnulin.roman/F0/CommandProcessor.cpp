@@ -386,8 +386,8 @@ void khasnulin::CommandProcessor::recommend(ArgumentReader &arguments, std::ostr
 }
 
 void khasnulin::CommandProcessor::recommendWithFilter(ArgumentReader &arguments, std::ostream &output,
-                                                      const UserName &name, Category *category,
-                                                      Difficulty *difficulty)
+                                                      const UserName &name, const Category *category,
+                                                      const Difficulty *difficulty)
 {
   arguments.finish();
   if (!storage_.findUser(name))
