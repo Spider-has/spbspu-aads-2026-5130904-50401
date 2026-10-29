@@ -24,14 +24,21 @@ namespace khasnulin
 
   private:
     using Handler = void (CommandProcessor::*)(ArgumentReader &, std::ostream &);
-    void recommendWithFilter(ArgumentReader &arguments, std::ostream &output, const UserName &name,
-                             const Category *category, const Difficulty *difficulty);
+
+    struct CommandInfo
+    {
+      Handler handler = nullptr;
+      bool isMutating = false;
+    };
 
     Learner learner_;
     Recommender recommender_;
     Storage storage_;
+    BSTree< std::string, CommandInfo > handlers_;
+    Vector< std::string > journal_;
 
-    BSTree< std::string, Handler > handlers_;
+    void recommendWithFilter(ArgumentReader &arguments, std::ostream &output, const UserName &name,
+                             const Category *category, const Difficulty *difficulty);
 
     bool executeLine(const std::string &line, std::ostream &output);
 
@@ -54,6 +61,9 @@ namespace khasnulin
 
     void similar(ArgumentReader &arguments, std::ostream &output);
     void recommend(ArgumentReader &arguments, std::ostream &output);
+
+    void save(ArgumentReader &arguments, std::ostream &output);
+    void load(ArgumentReader &arguments, std::ostream &output);
   };
 }
 
