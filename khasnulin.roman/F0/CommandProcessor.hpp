@@ -40,7 +40,7 @@ namespace khasnulin
     void recommendWithFilter(ArgumentReader &arguments, std::ostream &output, const UserName &name,
                              const Category *category, const Difficulty *difficulty);
 
-    bool executeLine(const std::string &line, std::ostream &output);
+    bool executeLine(const std::string &line, std::ostream &output, bool isReplay);
 
     void showDifficulties(ArgumentReader &arguments, std::ostream &output);
     void addUser(ArgumentReader &arguments, std::ostream &output);

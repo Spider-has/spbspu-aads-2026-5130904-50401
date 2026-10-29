@@ -8,6 +8,8 @@
 #include "Tokenizer.hpp"
 #include "Vector.hpp"
 #include <cstddef>
+#include <cstdio>
+#include <fstream>
 #include <istream>
 #include <ostream>
 #include <stdexcept>
@@ -39,6 +41,9 @@ khasnulin::CommandProcessor::CommandProcessor(Learner learner, Recommender recom
 
   handlers_.insert({"recommend", {&CommandProcessor::recommend, false}});
   handlers_.insert({"similar", {&CommandProcessor::similar, false}});
+
+  handlers_.insert({"save", {&CommandProcessor::save, false}});
+  handlers_.insert({"load", {&CommandProcessor::load, false}});
 }
 
 void khasnulin::CommandProcessor::run(std::istream &input, std::ostream &output)
@@ -49,7 +54,7 @@ void khasnulin::CommandProcessor::run(std::istream &input, std::ostream &output)
   {
     try
     {
-      isExitCmd = executeLine(line, output);
+      isExitCmd = executeLine(line, output, false);
     }
     catch (const std::invalid_argument &)
     {
@@ -58,7 +63,7 @@ void khasnulin::CommandProcessor::run(std::istream &input, std::ostream &output)
   }
 }
 
-bool khasnulin::CommandProcessor::executeLine(const std::string &line, std::ostream &output)
+bool khasnulin::CommandProcessor::executeLine(const std::string &line, std::ostream &output, bool isReplay)
 {
   Vector< Token > tokens = tokenize(line);
   if (tokens.isEmpty())
@@ -68,6 +73,14 @@ bool khasnulin::CommandProcessor::executeLine(const std::string &line, std::ostr
   if (tokens[0].isQuoted)
   {
     throw std::invalid_argument("command can't be in quoutes");
+  }
+  if (isReplay)
+  {
+    auto replayed = handlers_.find(tokens[0].text);
+    if (replayed == handlers_.end() || !replayed->second.isMutating)
+    {
+      throw std::invalid_argument("only mutating commands are allowed in session file");
+    }
   }
   ArgumentReader args(tokens);
 
@@ -404,4 +417,57 @@ void khasnulin::CommandProcessor::recommendWithFilter(ArgumentReader &arguments,
   {
     output << "\"" << rec.article->name().value() << "\"\n";
   }
+}
+
+void khasnulin::CommandProcessor::save(ArgumentReader &arguments, std::ostream & /*unused*/)
+{
+  std::string sessionName = arguments.sessionName();
+  arguments.finish();
+  std::string tempName = sessionName + ".tmp";
+  {
+    std::ofstream file(tempName);
+    if (!file.is_open())
+    {
+      throw std::invalid_argument("incorrect file path");
+    }
+    for (const std::string &line : journal_)
+    {
+      file << line << '\n';
+    }
+    file.close();
+    if (!file)
+    {
+      std::remove(tempName.c_str());
+      throw std::invalid_argument("catch error while trying to save file");
+    }
+    if (std::rename(tempName.c_str(), sessionName.c_str()) != 0)
+    {
+      std::remove(tempName.c_str());
+      throw std::invalid_argument("can't replace session file");
+    }
+  }
+}
+
+void khasnulin::CommandProcessor::load(ArgumentReader &arguments, std::ostream & /*unused*/)
+{
+  std::string sessionName = arguments.sessionName();
+  arguments.finish();
+  std::ifstream file(sessionName);
+  if (!file.is_open())
+  {
+    throw std::invalid_argument("incorrect file path");
+  }
+  CommandProcessor temp(learner_, recommender_);
+  std::ostream discard(nullptr);
+  std::string line;
+  while (std::getline(file, line))
+  {
+    temp.executeLine(line, discard, true);
+  }
+  if (file.bad())
+  {
+    throw std::invalid_argument("catch error while reading file");
+  }
+  storage_.swap(temp.storage_);
+  journal_.swap(temp.journal_);
 }
