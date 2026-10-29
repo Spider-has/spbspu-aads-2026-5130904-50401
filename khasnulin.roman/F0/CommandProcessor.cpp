@@ -37,7 +37,7 @@ khasnulin::CommandProcessor::CommandProcessor(Learner learner, Recommender recom
   handlers_.insert({"show-articles-categories", &CommandProcessor::showArticleCategories});
 
   handlers_.insert({"recommend", &CommandProcessor::recommend});
-  handlers_.insert({"recommend-similar", &CommandProcessor::similar});
+  handlers_.insert({"similar", &CommandProcessor::similar});
 }
 
 void khasnulin::CommandProcessor::run(std::istream &input, std::ostream &output)
@@ -344,7 +344,7 @@ void khasnulin::CommandProcessor::similar(ArgumentReader &arguments, std::ostrea
 {
   ArticleName article = arguments.articleName();
   arguments.finish();
-  if (storage_.findArticle(article))
+  if (!storage_.findArticle(article))
   {
     throw std::invalid_argument("article with such title not found");
   }
