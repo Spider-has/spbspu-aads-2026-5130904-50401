@@ -1,5 +1,6 @@
 #include "CommandProcessor.hpp"
 #include "ArgumentReader.hpp"
+#include "ArticleFilter.hpp"
 #include "Entities.hpp"
 #include "Model.hpp"
 #include "Recommender.hpp"
@@ -33,6 +34,9 @@ khasnulin::CommandProcessor::CommandProcessor(Learner learner, Recommender recom
 
   handlers_.insert({"show-tags", &CommandProcessor::showTags});
   handlers_.insert({"show-article-categories", &CommandProcessor::showArticleCategories});
+
+  handlers_.insert({"recommend", &CommandProcessor::recommend});
+  handlers_.insert({"recommend-similar", &CommandProcessor::similar});
 }
 
 void khasnulin::CommandProcessor::run(std::istream &input, std::ostream &output)
@@ -312,4 +316,66 @@ void khasnulin::CommandProcessor::showArticleCategories(ArgumentReader &argument
   arguments.finish();
   storage_.traverseCategories([&](const Category &category, std::size_t)
                               { output << category.value() << "\n"; });
+}
+
+void khasnulin::CommandProcessor::similar(ArgumentReader &arguments, std::ostream &output)
+{
+  ArticleName article = arguments.articleName();
+  arguments.finish();
+  if (storage_.findArticle(article))
+  {
+    throw std::invalid_argument("article with such title not found");
+  }
+  Vector< Recommender::Recommendation > sims = recommender_.similar(storage_, article);
+  for (const auto &recommendation : sims)
+  {
+    output << "\"" << recommendation.article->name().value() << "\"\n";
+  }
+}
+
+void khasnulin::CommandProcessor::recommend(ArgumentReader &arguments, std::ostream &output)
+{
+  UserName name = arguments.userName();
+  if (arguments.remaining() > 0)
+  {
+    if (arguments.nextIsDifficulty())
+    {
+      Difficulty difficulty = arguments.difficulty();
+      recommendWithFilter(arguments, output, name, nullptr, &difficulty);
+    }
+    else
+    {
+      Category category = arguments.category();
+      if (arguments.remaining() > 0)
+      {
+        Difficulty difficulty = arguments.difficulty();
+        recommendWithFilter(arguments, output, name, &category, &difficulty);
+      }
+      else
+      {
+        recommendWithFilter(arguments, output, name, &category, nullptr);
+      }
+    }
+  }
+  else
+  {
+    recommendWithFilter(arguments, output, name, nullptr, nullptr);
+  }
+}
+
+void khasnulin::CommandProcessor::recommendWithFilter(ArgumentReader &arguments, std::ostream &output,
+                                                      const UserName &name, Category *category,
+                                                      Difficulty *difficulty)
+{
+  arguments.finish();
+  if (!storage_.findUser(name))
+  {
+    throw std::invalid_argument("user with such name not found");
+  }
+  ArticleFilter filter(category, difficulty);
+  Vector< Recommender::Recommendation > recs = recommender_.recommend(storage_, name, filter);
+  for (const auto &rec : recs)
+  {
+    output << "\"" << rec.article->name().value() << "\"\n";
+  }
 }

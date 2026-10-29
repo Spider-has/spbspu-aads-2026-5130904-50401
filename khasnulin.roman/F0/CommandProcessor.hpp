@@ -2,6 +2,7 @@
 #define COMMAND_PROCESSOR_HPP
 
 #include "ArgumentReader.hpp"
+#include "Entities.hpp"
 #include "Model.hpp"
 #include "Recommender.hpp"
 #include "Storage.hpp"
@@ -23,6 +24,8 @@ namespace khasnulin
 
   private:
     using Handler = void (CommandProcessor::*)(ArgumentReader &, std::ostream &);
+    void recommendWithFilter(ArgumentReader &arguments, std::ostream &output, const UserName &name,
+                             Category *category, Difficulty *difficulty);
 
     Learner learner_;
     Recommender recommender_;
@@ -47,6 +50,9 @@ namespace khasnulin
 
     void showTags(ArgumentReader &arguments, std::ostream &output);
     void showArticleCategories(ArgumentReader &arguments, std::ostream &output);
+
+    void similar(ArgumentReader &arguments, std::ostream &output);
+    void recommend(ArgumentReader &arguments, std::ostream &output);
   };
 }
 
