@@ -30,6 +30,9 @@ khasnulin::CommandProcessor::CommandProcessor(Learner learner, Recommender recom
   handlers_.insert({"show-article-info", &CommandProcessor::showArticleInfo});
   handlers_.insert({"show-user-ratings", &CommandProcessor::showUserRatings});
   handlers_.insert({"rate-article", &CommandProcessor::rateArticle});
+
+  handlers_.insert({"show-tags", &CommandProcessor::showTags});
+  handlers_.insert({"show-article-categories", &CommandProcessor::showArticleCategories});
 }
 
 void khasnulin::CommandProcessor::run(std::istream &input, std::ostream &output)
@@ -296,4 +299,17 @@ void khasnulin::CommandProcessor::rateArticle(ArgumentReader &arguments, std::os
   }
 
   storage_.rate(userName, articleName, rating, learner_);
+}
+
+void khasnulin::CommandProcessor::showTags(ArgumentReader &arguments, std::ostream &output)
+{
+  arguments.finish();
+  storage_.traverseTags([&](const Tag &tag, std::size_t) { output << tag.value() << "\n"; });
+}
+
+void khasnulin::CommandProcessor::showArticleCategories(ArgumentReader &arguments, std::ostream &output)
+{
+  arguments.finish();
+  storage_.traverseCategories([&](const Category &category, std::size_t)
+                              { output << category.value() << "\n"; });
 }

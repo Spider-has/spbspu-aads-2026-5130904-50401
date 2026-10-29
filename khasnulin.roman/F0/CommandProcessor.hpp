@@ -44,6 +44,9 @@ namespace khasnulin
     void listArticles(ArgumentReader &arguments, std::ostream &output);
     void showUserRatings(ArgumentReader &arguments, std::ostream &output);
     void rateArticle(ArgumentReader &arguments, std::ostream &output);
+
+    void showTags(ArgumentReader &arguments, std::ostream &output);
+    void showArticleCategories(ArgumentReader &arguments, std::ostream &output);
   };
 }
 
