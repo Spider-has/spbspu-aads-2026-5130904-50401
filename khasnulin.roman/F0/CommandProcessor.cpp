@@ -21,6 +21,7 @@ khasnulin::CommandProcessor::CommandProcessor(Learner learner, Recommender recom
 {
   handlers_.insert({"show-difficulties", &CommandProcessor::showDifficulties});
   handlers_.insert({"add-user", &CommandProcessor::addUser});
+  handlers_.insert({"add-user-preferences", &CommandProcessor::addUserPreferences});
   handlers_.insert({"show-users", &CommandProcessor::showUsers});
   handlers_.insert({"delete-user", &CommandProcessor::deleteUser});
   handlers_.insert({"show-user-info", &CommandProcessor::showUserInfo});
@@ -118,6 +119,23 @@ void khasnulin::CommandProcessor::addUser(ArgumentReader &arguments, std::ostrea
   {
     storage_.eraseUser(name);
     throw;
+  }
+}
+
+void khasnulin::CommandProcessor::addUserPreferences(ArgumentReader &arguments, std::ostream & /*unused*/)
+{
+  UserName name = arguments.userName();
+  TagSet preferences = arguments.restTags();
+  arguments.finish();
+
+  if (!storage_.findUser(name))
+  {
+    throw std::invalid_argument("user with such name not found");
+  }
+
+  for (const auto &tag : preferences)
+  {
+    storage_.addPreference(name, tag.first);
   }
 }
 

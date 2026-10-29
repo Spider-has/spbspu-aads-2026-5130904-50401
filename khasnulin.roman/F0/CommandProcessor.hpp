@@ -37,6 +37,7 @@ namespace khasnulin
 
     void showDifficulties(ArgumentReader &arguments, std::ostream &output);
     void addUser(ArgumentReader &arguments, std::ostream &output);
+    void addUserPreferences(ArgumentReader &arguments, std::ostream &output);
     void showUsers(ArgumentReader &arguments, std::ostream &output);
     void deleteUser(ArgumentReader &arguments, std::ostream &output);
     void showUserInfo(ArgumentReader &arguments, std::ostream &output);

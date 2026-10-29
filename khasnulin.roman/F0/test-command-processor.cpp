@@ -1,4 +1,5 @@
 #include "CommandProcessor.hpp"
+#include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
 #include <sstream>
 #include <string>
@@ -666,6 +667,402 @@ BOOST_AUTO_TEST_CASE(seed_commands_then_inspection)
                          "Category: finance | Difficulty: intermediate\n"
                          "Tags: markets newsus\n"
                          "Avg Rating: 5.5/10 (2 ratings)\n";
+  BOOST_CHECK(runCommands(input) == expected);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+using namespace khasnulin;
+
+namespace
+{
+  std::string repeatInvalid(int count)
+  {
+    std::string result;
+    for (int i = 0; i < count; ++i)
+    {
+      result += invalidCommand;
+    }
+    return result;
+  }
+}
+
+BOOST_AUTO_TEST_SUITE(add_user_preferences_tests)
+
+BOOST_AUTO_TEST_CASE(adds_sorted_preferences_and_prints_nothing)
+{
+  std::string input = "add-user roman\n"
+                      "add-user-preferences roman cpp backend async\n"
+                      "show-user-info roman\n";
+  BOOST_CHECK_EQUAL(runCommands(input), "User: roman\nPreferences: async backend cpp\nRatings count: 0\n");
+}
+
+BOOST_AUTO_TEST_CASE(extends_existing_preferences)
+{
+  std::string input = "add-user roman cpp\n"
+                      "add-user-preferences roman async\n"
+                      "show-user-info roman\n";
+  BOOST_CHECK(runCommands(input) == "User: roman\nPreferences: async cpp\nRatings count: 0\n");
+}
+
+BOOST_AUTO_TEST_CASE(existing_preference_is_not_an_error)
+{
+  std::string input = "add-user roman cpp\n"
+                      "add-user-preferences roman cpp CPP\n"
+                      "show-user-info roman\n";
+  BOOST_CHECK(runCommands(input) == "User: roman\nPreferences: cpp\nRatings count: 0\n");
+}
+
+BOOST_AUTO_TEST_CASE(without_tags_is_invalid)
+{
+  std::string input = "add-user roman\n"
+                      "add-user-preferences roman\n";
+  BOOST_CHECK_EQUAL(runCommands(input), invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(unknown_user_is_invalid)
+{
+  BOOST_CHECK(runCommands("add-user-preferences roman cpp\n") == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(unknown_user_creates_no_tags)
+{
+  std::string input = "add-user-preferences roman cpp\n"
+                      "show-tags\n";
+  BOOST_CHECK(runCommands(input) == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(invalid_tag_adds_nothing)
+{
+  std::string input = "add-user roman cpp\n"
+                      "add-user-preferences roman go 123\n"
+                      "add-user-preferences roman go \"rust\"\n"
+                      "show-user-info roman\n";
+  BOOST_CHECK(runCommands(input) == repeatInvalid(2) + "User: roman\nPreferences: cpp\nRatings count: 0\n");
+}
+
+BOOST_AUTO_TEST_CASE(quoted_user_is_invalid)
+{
+  std::string input = "add-user roman\n"
+                      "add-user-preferences \"roman\" cpp\n";
+  BOOST_CHECK(runCommands(input) == invalidCommand);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(add_article_tags_tests)
+
+BOOST_AUTO_TEST_CASE(adds_sorted_tags_and_prints_nothing)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced\n"
+                      "add-article-tags \"Advanced C++\" cpp templates move-semantics\n"
+                      "show-article-info \"Advanced C++\"\n";
+  std::string expected = "Article: \"Advanced C++\"\n"
+                         "Category: cpp | Difficulty: advanced\n"
+                         "Tags: cpp move-semantics templates\n"
+                         "Avg Rating: 0.0/10 (0 ratings)\n";
+  BOOST_CHECK(runCommands(input) == expected);
+}
+
+BOOST_AUTO_TEST_CASE(extends_existing_tags_without_duplicates)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced cpp\n"
+                      "add-article-tags \"Advanced C++\" templates CPP\n"
+                      "show-article-info \"Advanced C++\"\n";
+  std::string expected = "Article: \"Advanced C++\"\n"
+                         "Category: cpp | Difficulty: advanced\n"
+                         "Tags: cpp templates\n"
+                         "Avg Rating: 0.0/10 (0 ratings)\n";
+  BOOST_CHECK(runCommands(input) == expected);
+}
+
+BOOST_AUTO_TEST_CASE(without_tags_is_invalid)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced\n"
+                      "add-article-tags \"Advanced C++\"\n";
+  BOOST_CHECK(runCommands(input) == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(unknown_article_is_invalid)
+{
+  std::string input = "add-article-tags \"Advanced C++\" cpp\n"
+                      "show-tags\n";
+  BOOST_CHECK(runCommands(input) == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(unquoted_article_is_invalid)
+{
+  std::string input = "add-article \"Python\" python beginner\n"
+                      "add-article-tags Python basics\n";
+  BOOST_CHECK(runCommands(input) == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(invalid_tag_adds_nothing)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced cpp\n"
+                      "add-article-tags \"Advanced C++\" templates 123\n"
+                      "show-article-info \"Advanced C++\"\n";
+  std::string expected = invalidCommand + "Article: \"Advanced C++\"\n"
+                                          "Category: cpp | Difficulty: advanced\n"
+                                          "Tags: cpp\n"
+                                          "Avg Rating: 0.0/10 (0 ratings)\n";
+  BOOST_CHECK(runCommands(input) == expected);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(show_tags_tests)
+
+BOOST_AUTO_TEST_CASE(empty_storage_prints_nothing)
+{
+  BOOST_CHECK(runCommands("show-tags\n") == "");
+}
+
+BOOST_AUTO_TEST_CASE(prints_union_of_preferences_and_article_tags_sorted)
+{
+  std::string input = "add-user roman rust cpp\n"
+                      "add-article \"Advanced C++\" cpp advanced templates cpp\n"
+                      "add-article \"Intro to Go\" go beginner backend\n"
+                      "show-tags\n";
+  BOOST_CHECK(runCommands(input) == "backend\ncpp\nrust\ntemplates\n");
+}
+
+BOOST_AUTO_TEST_CASE(extra_argument_is_invalid)
+{
+  BOOST_CHECK(runCommands("show-tags all\n") == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(tag_disappears_with_its_last_user)
+{
+  std::string input = "add-user roman rust\n"
+                      "delete-user roman\n"
+                      "show-tags\n";
+  BOOST_CHECK(runCommands(input) == "");
+}
+
+BOOST_AUTO_TEST_CASE(tag_disappears_with_its_last_article)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced templates\n"
+                      "delete-article \"Advanced C++\"\n"
+                      "show-tags\n";
+  BOOST_CHECK(runCommands(input) == "");
+}
+
+BOOST_AUTO_TEST_CASE(shared_tag_stays_while_used)
+{
+  std::string input = "add-user roman cpp rust\n"
+                      "add-article \"Advanced C++\" cpp advanced cpp\n"
+                      "delete-user roman\n"
+                      "show-tags\n";
+  BOOST_CHECK(runCommands(input) == "cpp\n");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(show_articles_categories_tests)
+
+BOOST_AUTO_TEST_CASE(empty_storage_prints_nothing)
+{
+  BOOST_CHECK(runCommands("show-articles-categories\n") == "");
+}
+
+BOOST_AUTO_TEST_CASE(prints_unique_categories_sorted)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced\n"
+                      "add-article \"Intro to Python\" python beginner\n"
+                      "add-article \"C++ Basics\" cpp beginner\n"
+                      "add-article \"Neural Networks Primer\" ai intermediate\n"
+                      "show-articles-categories\n";
+  BOOST_CHECK(runCommands(input) == "ai\ncpp\npython\n");
+}
+
+BOOST_AUTO_TEST_CASE(extra_argument_is_invalid)
+{
+  BOOST_CHECK(runCommands("show-articles-categories all\n") == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(category_disappears_with_its_last_article)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced\n"
+                      "add-article \"Intro to Python\" python beginner\n"
+                      "delete-article \"Advanced C++\"\n"
+                      "show-articles-categories\n";
+  BOOST_CHECK(runCommands(input) == "python\n");
+}
+
+BOOST_AUTO_TEST_CASE(shared_category_stays_while_used)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced\n"
+                      "add-article \"C++ Basics\" cpp beginner\n"
+                      "delete-article \"Advanced C++\"\n"
+                      "show-articles-categories\n";
+  BOOST_CHECK(runCommands(input) == "cpp\n");
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(delete_user_tests)
+
+BOOST_AUTO_TEST_CASE(removes_user_and_prints_nothing)
+{
+  std::string input = "add-user roman\n"
+                      "add-user alex\n"
+                      "delete-user roman\n"
+                      "show-users\n";
+  BOOST_CHECK(runCommands(input) == "alex\n");
+}
+
+BOOST_AUTO_TEST_CASE(unknown_user_is_invalid)
+{
+  BOOST_CHECK(runCommands("delete-user unknown_user\n") == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(wrong_arguments_are_invalid)
+{
+  std::string input = "add-user roman\n"
+                      "delete-user\n"
+                      "delete-user roman extra\n"
+                      "delete-user \"roman\"\n"
+                      "show-users\n";
+  BOOST_CHECK(runCommands(input) == repeatInvalid(3) + "roman\n");
+}
+
+BOOST_AUTO_TEST_CASE(deleting_twice_is_invalid)
+{
+  std::string input = "add-user roman\n"
+                      "delete-user roman\n"
+                      "delete-user roman\n";
+  BOOST_CHECK(runCommands(input) == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(removes_user_ratings_from_articles)
+{
+  std::string input = "add-user roman\n"
+                      "add-user alex\n"
+                      "add-article \"Advanced C++\" cpp advanced\n"
+                      "rate-article roman \"Advanced C++\" 10\n"
+                      "rate-article alex \"Advanced C++\" 6\n"
+                      "delete-user alex\n"
+                      "show-article-info \"Advanced C++\"\n";
+  std::string expected = "Article: \"Advanced C++\"\n"
+                         "Category: cpp | Difficulty: advanced\n"
+                         "Tags:\n"
+                         "Avg Rating: 10.0/10 (1 ratings)\n";
+  BOOST_CHECK(runCommands(input) == expected);
+}
+
+BOOST_AUTO_TEST_CASE(deleted_user_is_unknown_for_other_commands)
+{
+  std::string input = "add-user roman\n"
+                      "add-article \"Advanced C++\" cpp advanced\n"
+                      "delete-user roman\n"
+                      "show-user-info roman\n"
+                      "show-user-ratings roman\n"
+                      "rate-article roman \"Advanced C++\" 5\n"
+                      "recommend roman\n";
+  BOOST_CHECK(runCommands(input) == repeatInvalid(4));
+}
+
+BOOST_AUTO_TEST_CASE(user_can_be_added_again_from_scratch)
+{
+  std::string input = "add-user roman cpp\n"
+                      "add-article \"Advanced C++\" cpp advanced\n"
+                      "rate-article roman \"Advanced C++\" 10\n"
+                      "delete-user roman\n"
+                      "add-user roman\n"
+                      "show-user-info roman\n"
+                      "show-article-info \"Advanced C++\"\n";
+  std::string expected = "User: roman\n"
+                         "Preferences:\n"
+                         "Ratings count: 0\n"
+                         "Article: \"Advanced C++\"\n"
+                         "Category: cpp | Difficulty: advanced\n"
+                         "Tags:\n"
+                         "Avg Rating: 0.0/10 (0 ratings)\n";
+  BOOST_CHECK(runCommands(input) == expected);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(delete_article_tests)
+
+BOOST_AUTO_TEST_CASE(removes_article_and_prints_nothing)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced\n"
+                      "add-article \"Intro to Python\" python beginner\n"
+                      "delete-article \"Advanced C++\"\n"
+                      "list-articles\n";
+  BOOST_CHECK(runCommands(input) == "\"Intro to Python\" [python | beginner]\n");
+}
+
+BOOST_AUTO_TEST_CASE(unknown_article_is_invalid)
+{
+  BOOST_CHECK(runCommands("delete-article \"Non Existent\"\n") == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(wrong_arguments_are_invalid)
+{
+  std::string input = "add-article \"Python\" python beginner\n"
+                      "delete-article\n"
+                      "delete-article Python\n"
+                      "delete-article \"Python\" extra\n"
+                      "list-articles\n";
+  BOOST_CHECK(runCommands(input) == repeatInvalid(3) + "\"Python\" [python | beginner]\n");
+}
+
+BOOST_AUTO_TEST_CASE(deleting_twice_is_invalid)
+{
+  std::string input = "add-article \"Advanced C++\" cpp advanced\n"
+                      "delete-article \"Advanced C++\"\n"
+                      "delete-article \"Advanced C++\"\n";
+  BOOST_CHECK(runCommands(input) == invalidCommand);
+}
+
+BOOST_AUTO_TEST_CASE(removes_article_from_user_ratings)
+{
+  std::string input = "add-user roman\n"
+                      "add-article \"Advanced C++\" cpp advanced\n"
+                      "add-article \"Intro to Python\" python beginner\n"
+                      "rate-article roman \"Advanced C++\" 10\n"
+                      "rate-article roman \"Intro to Python\" 7\n"
+                      "delete-article \"Advanced C++\"\n"
+                      "show-user-ratings roman\n"
+                      "show-user-info roman\n";
+  std::string expected = "\"Intro to Python\" - 7/10\n"
+                         "User: roman\n"
+                         "Preferences:\n"
+                         "Ratings count: 1\n";
+  BOOST_CHECK(runCommands(input) == expected);
+}
+
+BOOST_AUTO_TEST_CASE(deleted_article_is_unknown_for_other_commands)
+{
+  std::string input = "add-user roman\n"
+                      "add-article \"Advanced C++\" cpp advanced\n"
+                      "delete-article \"Advanced C++\"\n"
+                      "show-article-info \"Advanced C++\"\n"
+                      "rate-article roman \"Advanced C++\" 5\n"
+                      "add-article-tags \"Advanced C++\" cpp\n"
+                      "similar \"Advanced C++\"\n";
+  BOOST_CHECK(runCommands(input) == repeatInvalid(4));
+}
+
+BOOST_AUTO_TEST_CASE(article_can_be_added_again_from_scratch)
+{
+  std::string input = "add-user roman\n"
+                      "add-article \"Advanced C++\" cpp advanced templates\n"
+                      "rate-article roman \"Advanced C++\" 10\n"
+                      "delete-article \"Advanced C++\"\n"
+                      "add-article \"Advanced C++\" python beginner\n"
+                      "show-article-info \"Advanced C++\"\n"
+                      "show-user-info roman\n";
+  std::string expected = "Article: \"Advanced C++\"\n"
+                         "Category: python | Difficulty: beginner\n"
+                         "Tags:\n"
+                         "Avg Rating: 0.0/10 (0 ratings)\n"
+                         "User: roman\n"
+                         "Preferences:\n"
+                         "Ratings count: 0\n";
   BOOST_CHECK(runCommands(input) == expected);
 }
 
