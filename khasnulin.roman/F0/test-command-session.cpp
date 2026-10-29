@@ -379,15 +379,17 @@ BOOST_AUTO_TEST_CASE(tokenizer_error_rejects_whole_file)
 BOOST_AUTO_TEST_CASE(non_mutating_commands_reject_whole_file)
 {
   SessionFile session("load-non-mutating");
-  const std::string forbidden[] = {"show-users", "recommend alex",         "show-difficulties",
-                                   "exit",       "save other-session.txt", "load other-session.txt"};
+  SessionFile other("load-non-mutating-other");
+  const std::string forbidden[] = {"show-users", "recommend alex",     "show-difficulties",
+                                   "exit",       "save " + other.path, "load " + other.path};
   for (const std::string &line : forbidden)
   {
     writeFile(session.path, "add-user alex\n" + line + "\nadd-user ivan\n");
-    BOOST_CHECK(runCommands("add-user roman\nload " + session.path + "\nshow-users\n") ==
-                invalidCommand + "roman\n");
+    BOOST_CHECK_MESSAGE(runCommands("add-user roman\nload " + session.path + "\nshow-users\n") ==
+                            invalidCommand + "roman\n",
+                        "forbidden line: " << line);
   }
-  BOOST_CHECK(fileExists("other-session.txt") == false);
+  BOOST_CHECK(fileExists(other.path) == false);
 }
 
 BOOST_AUTO_TEST_CASE(unknown_command_rejects_whole_file)
