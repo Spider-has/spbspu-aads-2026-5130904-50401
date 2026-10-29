@@ -17,27 +17,28 @@ khasnulin::CommandProcessor::CommandProcessor(Learner learner, Recommender recom
     learner_(learner),
     recommender_(recommender),
     storage_(),
-    handlers_()
+    handlers_(),
+    journal_()
 {
-  handlers_.insert({"show-difficulties", &CommandProcessor::showDifficulties});
-  handlers_.insert({"add-user", &CommandProcessor::addUser});
-  handlers_.insert({"add-user-preferences", &CommandProcessor::addUserPreferences});
-  handlers_.insert({"show-users", &CommandProcessor::showUsers});
-  handlers_.insert({"delete-user", &CommandProcessor::deleteUser});
-  handlers_.insert({"show-user-info", &CommandProcessor::showUserInfo});
-  handlers_.insert({"add-article", &CommandProcessor::addArticle});
-  handlers_.insert({"add-article-tags", &CommandProcessor::addArticleTags});
-  handlers_.insert({"delete-article", &CommandProcessor::deleteArticle});
-  handlers_.insert({"list-articles", &CommandProcessor::listArticles});
-  handlers_.insert({"show-article-info", &CommandProcessor::showArticleInfo});
-  handlers_.insert({"show-user-ratings", &CommandProcessor::showUserRatings});
-  handlers_.insert({"rate-article", &CommandProcessor::rateArticle});
+  handlers_.insert({"show-difficulties", {&CommandProcessor::showDifficulties, false}});
+  handlers_.insert({"add-user", {&CommandProcessor::addUser, true}});
+  handlers_.insert({"add-user-preferences", {&CommandProcessor::addUserPreferences, true}});
+  handlers_.insert({"show-users", {&CommandProcessor::showUsers, false}});
+  handlers_.insert({"delete-user", {&CommandProcessor::deleteUser, true}});
+  handlers_.insert({"show-user-info", {&CommandProcessor::showUserInfo, false}});
+  handlers_.insert({"add-article", {&CommandProcessor::addArticle, true}});
+  handlers_.insert({"add-article-tags", {&CommandProcessor::addArticleTags, true}});
+  handlers_.insert({"delete-article", {&CommandProcessor::deleteArticle, true}});
+  handlers_.insert({"list-articles", {&CommandProcessor::listArticles, false}});
+  handlers_.insert({"show-article-info", {&CommandProcessor::showArticleInfo, false}});
+  handlers_.insert({"show-user-ratings", {&CommandProcessor::showUserRatings, false}});
+  handlers_.insert({"rate-article", {&CommandProcessor::rateArticle, true}});
 
-  handlers_.insert({"show-tags", &CommandProcessor::showTags});
-  handlers_.insert({"show-articles-categories", &CommandProcessor::showArticleCategories});
+  handlers_.insert({"show-tags", {&CommandProcessor::showTags, false}});
+  handlers_.insert({"show-articles-categories", {&CommandProcessor::showArticleCategories, false}});
 
-  handlers_.insert({"recommend", &CommandProcessor::recommend});
-  handlers_.insert({"similar", &CommandProcessor::similar});
+  handlers_.insert({"recommend", {&CommandProcessor::recommend, false}});
+  handlers_.insert({"similar", {&CommandProcessor::similar, false}});
 }
 
 void khasnulin::CommandProcessor::run(std::istream &input, std::ostream &output)
@@ -82,7 +83,7 @@ bool khasnulin::CommandProcessor::executeLine(const std::string &line, std::ostr
     throw std::invalid_argument("no such command");
   }
 
-  Handler handler = it->second;
+  Handler handler = it->second.handler;
   (this->*handler)(args, output);
 
   return false;
