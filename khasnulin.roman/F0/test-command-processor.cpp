@@ -863,7 +863,7 @@ BOOST_AUTO_TEST_SUITE(show_articles_categories_tests)
 
 BOOST_AUTO_TEST_CASE(empty_storage_prints_nothing)
 {
-  BOOST_CHECK(runCommands("show-articles-categories\n") == "");
+  BOOST_CHECK_EQUAL(runCommands("show-articles-categories\n"), "");
 }
 
 BOOST_AUTO_TEST_CASE(prints_unique_categories_sorted)

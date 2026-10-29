@@ -34,7 +34,7 @@ khasnulin::CommandProcessor::CommandProcessor(Learner learner, Recommender recom
   handlers_.insert({"rate-article", &CommandProcessor::rateArticle});
 
   handlers_.insert({"show-tags", &CommandProcessor::showTags});
-  handlers_.insert({"show-article-categories", &CommandProcessor::showArticleCategories});
+  handlers_.insert({"show-articles-categories", &CommandProcessor::showArticleCategories});
 
   handlers_.insert({"recommend", &CommandProcessor::recommend});
   handlers_.insert({"recommend-similar", &CommandProcessor::similar});
@@ -131,6 +131,10 @@ void khasnulin::CommandProcessor::addUserPreferences(ArgumentReader &arguments, 
   if (!storage_.findUser(name))
   {
     throw std::invalid_argument("user with such name not found");
+  }
+  if (preferences.empty())
+  {
+    throw std::invalid_argument("preferences list can't be empty");
   }
 
   for (const auto &tag : preferences)
