@@ -157,3 +157,8 @@ std::size_t khasnulin::parseUnsignedNumber(const std::string &str)
   }
   return result;
 }
+
+std::string khasnulin::ArgumentReader::sessionName()
+{
+  return nextPlain().text;
+}

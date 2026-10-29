@@ -20,6 +20,8 @@ namespace khasnulin
     Category category();
     Difficulty difficulty();
 
+    std::string sessionName();
+
     ArticleName articleName();
 
     Rating rating();

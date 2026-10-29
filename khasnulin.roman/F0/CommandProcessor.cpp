@@ -85,7 +85,10 @@ bool khasnulin::CommandProcessor::executeLine(const std::string &line, std::ostr
 
   Handler handler = it->second.handler;
   (this->*handler)(args, output);
-
+  if (it->second.isMutating)
+  {
+    journal_.pushBack(line);
+  }
   return false;
 }
 
